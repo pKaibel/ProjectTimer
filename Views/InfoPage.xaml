@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.InfoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:InfoViewModel"
+    Title="Info">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,20', Tablet='36,28', Desktop='48,32'}" Spacing="24" MaximumWidthRequest="720" HorizontalOptions="Fill">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Info" Style="{StaticResource PageTitle}" />
+                <Label Text="Details zu deiner ProjectTimer-App." Style="{StaticResource MutedLabel}" />
+            </VerticalStackLayout>
+
+            <Border Padding="24" BackgroundColor="{DynamicResource PrimaryContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="56,*" ColumnSpacing="18">
+                    <Border WidthRequest="56" HeightRequest="56" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0" VerticalOptions="Start">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                        <Label Text="PT" TextColor="{DynamicResource OnPrimary}" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                        <Label Text="ProjectTimer" FontSize="22" FontAttributes="Bold" TextColor="{DynamicResource OnPrimaryContainer}" />
+                        <Label Text="Zeiterfassung für deine Projekte" TextColor="{DynamicResource OnPrimaryContainer}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="18">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="App-Version" FontAttributes="Bold" FontSize="17" />
+                            <Label Text="Öffentlich angezeigte Versionsnummer" Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding AppVersion}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" VerticalOptions="Center" />
+                    </Grid>
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="Build-Datum" FontAttributes="Bold" FontSize="17" />
+                            <Label Text="Zeitpunkt der Kompilierung dieser App-Version" Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding BuildDate}" TextColor="{DynamicResource OnSurfaceVariant}" FontAttributes="Bold" VerticalOptions="Center" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

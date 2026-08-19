@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.TimeOverviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    xmlns:services="clr-namespace:ProjectTimer.Services"
+    x:DataType="vm:TimeOverviewViewModel"
+    Title="Zeitenübersicht">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,20', Tablet='36,28', Desktop='48,32'}" Spacing="22" MaximumWidthRequest="800" HorizontalOptions="Fill">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Zeitenübersicht" Style="{StaticResource PageTitle}" />
+                <Label Text="Vergleiche deine erfasste Arbeitszeit nach Zeitraum." Style="{StaticResource MutedLabel}" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                <Button Text="Tag" Command="{Binding ShowDayCommand}" Style="{StaticResource SecondaryButton}" />
+                <Button Grid.Column="1" Text="Woche" Command="{Binding ShowWeekCommand}" Style="{StaticResource SecondaryButton}" />
+                <Button Grid.Row="1" Text="Monat" Command="{Binding ShowMonthCommand}" Style="{StaticResource SecondaryButton}" />
+                <Button Grid.Row="1" Grid.Column="1" Text="Jahr" Command="{Binding ShowYearCommand}" Style="{StaticResource SecondaryButton}" />
+            </Grid>
+
+            <Border Padding="22" BackgroundColor="{DynamicResource PrimaryContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="{Binding Title}" TextColor="{DynamicResource OnPrimaryContainer}" FontSize="19" FontAttributes="Bold" />
+                    <Label Text="{Binding Subtitle}" TextColor="{DynamicResource OnPrimaryContainer}" />
+                    <Label Text="{Binding TotalDurationText}" TextColor="{DynamicResource OnPrimaryContainer}" FontSize="28" FontAttributes="Bold" Margin="0,6,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Bars}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="services:TimeChartBar">
+                        <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="12" HeightRequest="30">
+                            <Label Text="{Binding Label}" Style="{StaticResource MutedLabel}" VerticalTextAlignment="Center" />
+                            <Border Grid.Column="1" HeightRequest="14" BackgroundColor="{DynamicResource SurfaceContainerHigh}" StrokeThickness="0" VerticalOptions="Center">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                <Border WidthRequest="{Binding BarWidth}" HeightRequest="14" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0" HorizontalOptions="Start" VerticalOptions="Center">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                </Border>
+                            </Border>
+                            <Label Grid.Column="2" Text="{Binding DurationText}" FontAttributes="Bold" VerticalTextAlignment="Center" HorizontalTextAlignment="End" />
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.ProjectListPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    xmlns:services="clr-namespace:ProjectTimer.Services"
+    x:DataType="vm:ProjectListViewModel"
+    Title="Zeiterfassung">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Neu" Command="{Binding AddProjectCommand}" />
+        <ToolbarItem Text="Einstellungen" Command="{Binding OpenSettingsCommand}" Order="Secondary" />
+        <ToolbarItem Text="Info" Command="{Binding OpenInfoCommand}" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+
+    <Grid Padding="{OnIdiom Phone='20,16', Tablet='36,24', Desktop='48,28'}" RowDefinitions="Auto,*,Auto" RowSpacing="16">
+        <VerticalStackLayout MaximumWidthRequest="900" HorizontalOptions="Fill" Spacing="18">
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="Diese Woche" FontSize="19" FontAttributes="Bold" />
+                            <Label Text="Erfasste Arbeitszeit" Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding WeeklyTotalText}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" VerticalOptions="Center" />
+                    </Grid>
+                    <VerticalStackLayout Spacing="5" BindableLayout.ItemsSource="{Binding WeeklyBars}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="services:TimeChartBar">
+                                <Grid ColumnDefinitions="38,*,Auto" ColumnSpacing="10" HeightRequest="24">
+                                    <Label Text="{Binding Label}" Style="{StaticResource MutedLabel}" FontSize="13" VerticalTextAlignment="Center" />
+                                    <Border Grid.Column="1" HeightRequest="11" BackgroundColor="{DynamicResource SurfaceContainerHigh}" StrokeThickness="0" VerticalOptions="Center">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                        <Border WidthRequest="{Binding BarWidth}" HeightRequest="11" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0" HorizontalOptions="Start" VerticalOptions="Center">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                        </Border>
+                                    </Border>
+                                    <Label Grid.Column="2" Text="{Binding DurationText}" FontSize="13" FontAttributes="Bold" VerticalTextAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                    <Button Text="Übersicht anzeigen" Command="{Binding OpenOverviewCommand}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" />
+                </VerticalStackLayout>
+            </Border>
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Meine Projekte" Style="{StaticResource PageTitle}" />
+                <Label Text="Arbeitszeit lokal und zuverlässig erfassen" Style="{StaticResource MutedLabel}" />
+                <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" Margin="0,8,0,0" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+
+        <RefreshView Grid.Row="1" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsBusy, Mode=OneWay}" MaximumWidthRequest="900" HorizontalOptions="Fill">
+            <CollectionView ItemsSource="{Binding Projects}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,48" Spacing="8" HorizontalOptions="Center">
+                        <Label Text="Noch keine Projekte" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="Erstellen Sie Ihr erstes Projekt und beginnen Sie mit der Zeiterfassung." Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" MaximumWidthRequest="420" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ProjectListItemViewModel">
+                        <Border Margin="0,0,0,12" Padding="20" Stroke="{DynamicResource OutlineVariant}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.OpenProjectCommand}" CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="5">
+                                <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                <Label Grid.Column="1" Text="{Binding TotalDurationText}" FontSize="17" FontAttributes="Bold" TextColor="{DynamicResource Primary}" VerticalTextAlignment="Center" />
+                                <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Description}" Style="{StaticResource MutedLabel}" IsVisible="{Binding HasDescription}" LineBreakMode="TailTruncation" MaxLines="2" />
+                                <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontSize="13" FontAttributes="Bold" IsVisible="{Binding IsTimerActive}" Margin="0,3,0,0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Button Grid.Row="2" Text="＋ Neues Projekt" Command="{Binding AddProjectCommand}" MaximumWidthRequest="900" HorizontalOptions="Fill" />
+    </Grid>
+</ContentPage>

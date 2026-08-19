@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.ProjectDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:ProjectDetailViewModel"
+    Title="{Binding ProjectName}">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Bearbeiten" Command="{Binding EditProjectCommand}" />
+        <ToolbarItem Text="Löschen" Command="{Binding DeleteProjectCommand}" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,18', Tablet='36,28', Desktop='48,32'}" Spacing="18" MaximumWidthRequest="800" HorizontalOptions="Fill">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="{Binding ProjectName}" Style="{StaticResource PageTitle}" />
+                <Label Text="{Binding Description}" Style="{StaticResource MutedLabel}" IsVisible="{Binding HasDescription}" />
+            </VerticalStackLayout>
+
+            <Border Padding="24" StrokeThickness="0" BackgroundColor="{DynamicResource PrimaryContainer}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="7">
+                    <Label Text="GESAMTZEIT" FontSize="12" CharacterSpacing="1.5" TextColor="{DynamicResource OnPrimaryContainer}" FontAttributes="Bold" />
+                    <Label Text="{Binding TotalDurationText}" FontSize="34" TextColor="{DynamicResource OnPrimaryContainer}" FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="24" Stroke="{DynamicResource Success}" StrokeThickness="2" BackgroundColor="{DynamicResource SurfaceContainer}" IsVisible="{Binding IsTrackingHere}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Fill">
+                    <Label Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding ElapsedText}" FontSize="42" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding StartedAtText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                    <Button Text="Zeiterfassung pausieren" Command="{Binding PauseTimerCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
+                    <Button Text="Projekt wechseln" Command="{Binding SwitchProjectCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
+                    <Button Text="Zeiterfassung fortsetzen" Command="{Binding ResumeTimerCommand}" IsVisible="{Binding IsPaused}" />
+                    <Button Text="Zeiterfassung beenden" Command="{Binding StopTimerCommand}" Style="{StaticResource DangerButton}" Margin="0,8,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16" Stroke="{DynamicResource OutlineVariant}" BackgroundColor="{DynamicResource SurfaceContainer}" IsVisible="{Binding IsTrackingAnotherProject}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                <Label Text="{Binding OtherTimerText}" TextColor="{StaticResource Success}" HorizontalTextAlignment="Center" />
+            </Border>
+
+            <Button Text="Zeiterfassung starten" Command="{Binding StartTimerCommand}" IsVisible="{Binding CanStartTimer}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Manuell hinzufügen" Command="{Binding AddManualCommand}" Style="{StaticResource SecondaryButton}" />
+                <Button Grid.Column="1" Text="Details anzeigen" Command="{Binding ShowEntriesCommand}" Style="{StaticResource SecondaryButton}" />
+            </Grid>
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

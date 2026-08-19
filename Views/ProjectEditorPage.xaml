@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.ProjectEditorPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:ProjectEditorViewModel"
+    Title="{Binding Title}">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,20', Tablet='36,28', Desktop='48,32'}" Spacing="18" MaximumWidthRequest="720" HorizontalOptions="Fill">
+            <Label Text="{Binding Title}" Style="{StaticResource PageTitle}" />
+            <VerticalStackLayout Spacing="7">
+                <Label Text="Projektname *" FontAttributes="Bold" />
+                <Border Padding="16,5" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Entry Text="{Binding Name}" Placeholder="z. B. Kundenportal" MaxLength="200" ReturnType="Next" />
+                </Border>
+            </VerticalStackLayout>
+            <VerticalStackLayout Spacing="7">
+                <Label Text="Beschreibung" FontAttributes="Bold" />
+                <Border Padding="16,8" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Editor Text="{Binding Description}" Placeholder="Optional" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="120" />
+                </Border>
+            </VerticalStackLayout>
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+            <Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

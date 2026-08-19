@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.ProjectSwitchPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:ProjectSwitchViewModel"
+    Title="Projekt wechseln">
+    <Grid Padding="{OnIdiom Phone='20,16', Tablet='36,24', Desktop='48,28'}" RowDefinitions="Auto,*" RowSpacing="18" MaximumWidthRequest="800" HorizontalOptions="Fill">
+        <VerticalStackLayout Spacing="5">
+            <Label Text="Projekt wechseln" Style="{StaticResource PageTitle}" />
+            <Label Text="{Binding SourceProjectName, StringFormat='„{0}“ wird pausiert.'}" Style="{StaticResource MutedLabel}" />
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+        </VerticalStackLayout>
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Projects}" SelectionMode="None">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20,48" Spacing="8" HorizontalOptions="Center">
+                    <Label Text="Kein anderes Projekt vorhanden" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    <Label Text="Lege zuerst ein weiteres Projekt an, um schnell wechseln zu können." Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:ProjectSwitchItem">
+                    <Border Padding="18" Margin="0,0,0,12" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.SelectProjectCommand}" CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                                <Label Text="{Binding StateText}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" FontSize="13" />
+                                <Label Text="{Binding Description}" Style="{StaticResource MutedLabel}" IsVisible="{Binding HasDescription}" LineBreakMode="TailTruncation" MaxLines="2" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="{Binding ActionText}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

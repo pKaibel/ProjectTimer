@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.SettingsPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:SettingsViewModel"
+    Title="Einstellungen">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,20', Tablet='36,28', Desktop='48,32'}" Spacing="24" MaximumWidthRequest="720" HorizontalOptions="Fill">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Einstellungen" Style="{StaticResource PageTitle}" />
+                <Label Text="Passe Darstellung und Datensicherung an deinen Arbeitsalltag an." Style="{StaticResource MutedLabel}" />
+            </VerticalStackLayout>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Dunkelmodus" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Reduziert Blendung in dunkler Umgebung." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <Switch Grid.Column="1" IsToggled="{Binding IsDarkMode}" OnColor="{DynamicResource Primary}" ThumbColor="{DynamicResource OnPrimary}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Farbschema" Style="{StaticResource SectionTitle}" />
+                <Label Text="Alle drei Schemas verwenden zugängliche Kontraste für Text und Aktionen." Style="{StaticResource MutedLabel}" />
+                <CollectionView ItemsSource="{Binding Schemes}" SelectionMode="None" Margin="0,4,0,0">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ThemeSchemeItem">
+                            <Border Padding="18" Margin="0,0,0,12" BackgroundColor="{DynamicResource Surface}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1.25">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.SelectSchemeCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="Stroke" Value="{DynamicResource Primary}" />
+                                        <Setter Property="StrokeThickness" Value="2" />
+                                        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryContainer}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Grid ColumnDefinitions="56,*,Auto" ColumnSpacing="14">
+                                    <Border WidthRequest="56" HeightRequest="56" BackgroundColor="{Binding PreviewContainer}" StrokeThickness="0">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                                        <Border WidthRequest="24" HeightRequest="24" BackgroundColor="{Binding PreviewPrimary}" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        </Border>
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                                        <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                                        <Label Text="{Binding Description}" Style="{StaticResource MutedLabel}" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="2" Text="✓" TextColor="{DynamicResource Primary}" FontSize="22" FontAttributes="Bold" VerticalOptions="Center" IsVisible="{Binding IsSelected}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Datensicherung" Style="{StaticResource SectionTitle}" />
+                <Label Text="Exportiere deine Projekte und Zeiteinträge regelmäßig als CSV-Datei. Ein Import ergänzt fehlende Daten und überspringt identische Einträge." Style="{StaticResource MutedLabel}" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Text="CSV exportieren" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" />
+                    <Button Grid.Column="1" Text="CSV importieren" Command="{Binding ImportCommand}" Style="{StaticResource SecondaryButton}" />
+                </Grid>
+                <Label Text="{Binding DataMessage}" TextColor="{DynamicResource Success}" IsVisible="{Binding HasDataMessage}" />
+                <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

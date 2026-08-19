@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.TimeEntryListPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:TimeEntryListViewModel"
+    Title="{Binding Title}">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Hinzufügen" Command="{Binding AddCommand}" />
+    </ContentPage.ToolbarItems>
+    <Grid Padding="{OnIdiom Phone='20,14', Tablet='36,22', Desktop='48,26'}" RowDefinitions="Auto,*" RowSpacing="12" MaximumWidthRequest="900" HorizontalOptions="Fill">
+        <VerticalStackLayout Spacing="4">
+            <Label Text="Zeiteinträge" Style="{StaticResource PageTitle}" />
+            <Label Text="Neueste Einträge zuerst" Style="{StaticResource MutedLabel}" />
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" Margin="0,6,0,0" />
+        </VerticalStackLayout>
+        <RefreshView Grid.Row="1" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsBusy, Mode=OneWay}">
+            <CollectionView ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,48" Spacing="8" HorizontalOptions="Center">
+                        <Label Text="Noch keine Zeiteinträge" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="Starten Sie einen Timer oder fügen Sie eine Zeit manuell hinzu." Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate x:DataType="vm:TimeEntryGroup">
+                        <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" Padding="2,18,2,10" />
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TimeEntryListItemViewModel">
+                        <Border Margin="0,0,0,10" Padding="18" Stroke="{DynamicResource OutlineVariant}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" RowSpacing="5">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="{Binding DateText}" FontAttributes="Bold" FontSize="17" />
+                                    <Label Text="{Binding TimeRangeText}" Style="{StaticResource MutedLabel}" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding DurationText}" FontAttributes="Bold" TextColor="{DynamicResource Primary}" VerticalTextAlignment="Center" Margin="8,0" />
+                                <Button Grid.Column="2" Text="✎" Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditCommand}" CommandParameter="{Binding .}" Style="{StaticResource SecondaryButton}" Padding="10,6" FontSize="15" />
+                                <Label Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Note}" IsVisible="{Binding HasNote}" Margin="0,5,0,0" />
+                                <Button Grid.Row="2" Grid.ColumnSpan="3" Text="Eintrag löschen" Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.DeleteCommand}" CommandParameter="{Binding .}" BackgroundColor="Transparent" TextColor="{DynamicResource Error}" Padding="0,8" HorizontalOptions="Start" FontAttributes="None" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

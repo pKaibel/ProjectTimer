@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.TimeEntryEditorPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:TimeEntryEditorViewModel"
+    Title="{Binding Title}">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='20,20', Tablet='36,28', Desktop='48,32'}" Spacing="18" MaximumWidthRequest="720" HorizontalOptions="Fill">
+            <Label Text="{Binding Title}" Style="{StaticResource PageTitle}" />
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="8">
+                <Label Grid.ColumnSpan="2" Text="Datum" FontAttributes="Bold" />
+                <Border Grid.Row="1" Grid.ColumnSpan="2" Padding="14,3" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <DatePicker Date="{Binding Date}" Format="dd.MM.yyyy" />
+                </Border>
+                <Label Grid.Row="2" Text="Start" FontAttributes="Bold" />
+                <Label Grid.Row="2" Grid.Column="1" Text="Ende" FontAttributes="Bold" />
+                <Border Grid.Row="3" Padding="14,3" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <TimePicker Time="{Binding StartTime}" Format="HH:mm" />
+                </Border>
+                <Border Grid.Row="3" Grid.Column="1" Padding="14,3" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <TimePicker Time="{Binding EndTime}" Format="HH:mm" />
+                </Border>
+            </Grid>
+            <VerticalStackLayout Spacing="7">
+                <Label Text="Notiz" FontAttributes="Bold" />
+                <Border Padding="16,8" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Editor Text="{Binding Note}" Placeholder="Optional, z. B. Kundenbesprechung" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="100" />
+                </Border>
+            </VerticalStackLayout>
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
+            <Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
