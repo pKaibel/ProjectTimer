@@ -38,7 +38,7 @@ public sealed class DatabaseService
             await _database.CreateTableAsync<TimeEntry>();
             await _database.CreateTableAsync<ActiveTimerState>();
             await MigrateActiveTimerStateAsync();
-            await MigrateActiveTimerPauseStateAsync();
+            await MigrateActiveTimerColumnsAsync();
             _isInitialized = true;
         }
         finally
@@ -68,7 +68,7 @@ public sealed class DatabaseService
             """);
     }
 
-    private async Task MigrateActiveTimerPauseStateAsync()
+    private async Task MigrateActiveTimerColumnsAsync()
     {
         var columns = await _database.QueryAsync<DatabaseColumn>("PRAGMA table_info(ActiveTimeEntry)");
         if (columns.All(column => column.Name != "AccumulatedTicks"))
@@ -82,6 +82,12 @@ public sealed class DatabaseService
             await _database.ExecuteAsync(
                 "ALTER TABLE ActiveTimeEntry ADD COLUMN IsPaused INTEGER NOT NULL DEFAULT 0");
         }
+
+        if (columns.All(column => column.Name != "Note"))
+        {
+            await _database.ExecuteAsync(
+                "ALTER TABLE ActiveTimeEntry ADD COLUMN Note TEXT NULL");
+        }
     }
 
     public async Task<List<Project>> GetProjectsAsync()
@@ -94,12 +100,27 @@ public sealed class DatabaseService
     {
         await InitializeAsync();
         const string sql = """
-            SELECT p.Id, p.Name, p.Description, p.CreatedAtUtcTicks,
-                   COALESCE(SUM(t.EndUtcTicks - t.StartUtcTicks), 0) AS TotalTicks
-            FROM Projects p
-            LEFT JOIN TimeEntries t ON t.ProjectId = p.Id
-            GROUP BY p.Id, p.Name, p.Description, p.CreatedAtUtcTicks
-            ORDER BY p.Name COLLATE NOCASE
+            WITH ProjectTotals AS
+            (
+                SELECT p.Id, p.Name, p.Description, p.CreatedAtUtcTicks,
+                       COALESCE(SUM(t.EndUtcTicks - t.StartUtcTicks), 0) AS TotalTicks,
+                       MAX(CASE
+                               WHEN t.EndUtcTicks > t.CreatedAtUtcTicks THEN t.EndUtcTicks
+                               ELSE t.CreatedAtUtcTicks
+                           END) AS LastEntryUtcTicks
+                FROM Projects p
+                LEFT JOIN TimeEntries t ON t.ProjectId = p.Id
+                GROUP BY p.Id, p.Name, p.Description, p.CreatedAtUtcTicks
+            )
+            SELECT p.Id, p.Name, p.Description, p.CreatedAtUtcTicks, p.TotalTicks
+            FROM ProjectTotals p
+            LEFT JOIN ActiveTimeEntry a ON a.ProjectId = p.Id
+            ORDER BY MAX(
+                         p.CreatedAtUtcTicks,
+                         COALESCE(p.LastEntryUtcTicks, 0),
+                         COALESCE(a.StartedAtUtcTicks, 0)
+                     ) DESC,
+                     p.Name COLLATE NOCASE
             """;
         return await _database.QueryAsync<ProjectTotal>(sql);
     }
@@ -250,6 +271,7 @@ public sealed class DatabaseService
     public async Task StartTimerAsync(ActiveTimerState state)
     {
         await InitializeAsync();
+        state.Note = _timeEntryFactory.NormalizeNote(state.Note);
         await _database.RunInTransactionAsync(connection =>
         {
             if (connection.Find<Project>(state.ProjectId) is null)
@@ -364,7 +386,8 @@ public sealed class DatabaseService
         if (current.ProjectId != expectedState.ProjectId
             || current.StartedAtUtcTicks != expectedState.StartedAtUtcTicks
             || current.AccumulatedTicks != expectedState.AccumulatedTicks
-            || current.IsPaused != expectedState.IsPaused)
+            || current.IsPaused != expectedState.IsPaused
+            || current.Note != expectedState.Note)
         {
             throw new InvalidOperationException("Der laufende Timer wurde zwischenzeitlich geändert.");
         }

@@ -21,6 +21,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     private string _elapsedText = "00:00:00";
     private string _startedAtText = string.Empty;
     private string _otherTimerText = string.Empty;
+    private string? _startNote;
     private bool _isTrackingHere;
     private bool _isTrackingAnotherProject;
     private bool _isPaused;
@@ -90,6 +91,12 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     {
         get => _otherTimerText;
         private set => SetProperty(ref _otherTimerText, value);
+    }
+
+    public string? StartNote
+    {
+        get => _startNote;
+        set => SetProperty(ref _startNote, value);
     }
 
     public bool IsTrackingHere
@@ -233,7 +240,8 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     {
         await RunBusyAsync(async () =>
         {
-            _activeTimer = await _tracking.StartAsync(_projectId);
+            _activeTimer = await _tracking.StartAsync(_projectId, StartNote);
+            StartNote = null;
             await RefreshActiveTimerAsync();
             StartDisplayTimer();
         });

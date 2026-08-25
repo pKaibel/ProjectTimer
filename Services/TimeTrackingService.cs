@@ -40,7 +40,7 @@ public sealed class TimeTrackingService
                 : TimeTrackingStatus.Idle;
     }
 
-    public async Task<ActiveTimerState> StartAsync(int projectId)
+    public async Task<ActiveTimerState> StartAsync(int projectId, string? note = null)
     {
         await _gate.WaitAsync();
         try
@@ -54,6 +54,7 @@ public sealed class TimeTrackingService
             var state = new ActiveTimerState
             {
                 ProjectId = projectId,
+                Note = _timeEntryFactory.NormalizeNote(note),
                 StartedAtUtc = DateTime.UtcNow,
                 AccumulatedTicks = 0,
                 IsPaused = false

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap mp rescap">
-  <Identity Name="ProjectTimer" Publisher="CN=FertiserveGmbH" Version="1.0.19.0" />
+  <Identity Name="ProjectTimer" Publisher="CN=FertiserveGmbH" Version="1.0.23.0" />
   <mp:PhoneIdentity PhoneProductId="78c16f61-7c49-44c5-9c91-acb78a1b76a3" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties><DisplayName>ProjectTimer</DisplayName><PublisherDisplayName>ProjectTimer</PublisherDisplayName><Logo>$placeholder$.png</Logo></Properties>
   <Dependencies><TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" /><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" /></Dependencies>

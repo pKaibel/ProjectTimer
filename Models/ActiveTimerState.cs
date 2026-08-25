@@ -17,6 +17,9 @@ public sealed class ActiveTimerState
 
     public bool IsPaused { get; set; }
 
+    [MaxLength(2000)]
+    public string? Note { get; set; }
+
     [Ignore]
     public DateTime StartedAtUtc
     {

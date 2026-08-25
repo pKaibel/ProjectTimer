@@ -56,6 +56,7 @@ public sealed class TimeEntryFactory
         var entry = new TimeEntry
         {
             ProjectId = activeTimer.ProjectId,
+            Note = NormalizeNote(activeTimer.Note),
             StartAtUtc = activeTimer.StartedAtUtc,
             EndAtUtc = endedAtUtc.ToUniversalTime(),
             CreatedAt = DateTime.UtcNow
@@ -88,9 +89,14 @@ public sealed class TimeEntryFactory
         }
     }
 
-    private static string? NormalizeNote(string? note)
+    public string? NormalizeNote(string? note)
     {
         var trimmed = note?.Trim();
+        if (trimmed?.Length > 2000)
+        {
+            throw new ArgumentException("Die Notiz darf höchstens 2.000 Zeichen lang sein.");
+        }
+
         return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 }

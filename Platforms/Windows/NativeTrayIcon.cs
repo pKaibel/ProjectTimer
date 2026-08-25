@@ -27,6 +27,7 @@ internal sealed class NativeTrayIcon : IDisposable
     private readonly IntPtr _windowHandle;
     private readonly Action _restoreWindow;
     private readonly SubclassProc _subclassProc;
+    private IntPtr _windowIcon;
     private IntPtr _statusIcon;
     private TimeTrackingStatus _status = TimeTrackingStatus.Idle;
     private bool _isDisposed;
@@ -43,8 +44,10 @@ internal sealed class NativeTrayIcon : IDisposable
 
     private void AddIcon()
     {
+        _windowIcon = CreateStatusIcon(TimeTrackingStatus.Idle);
+        ApplyTitleBarIcon(_windowIcon);
         _statusIcon = CreateStatusIcon(_status);
-        ApplyWindowIcon(_statusIcon);
+        ApplyTaskbarIcon(_statusIcon);
         var data = new NotifyIconData
         {
             cbSize = (uint)Marshal.SizeOf<NotifyIconData>(),
@@ -79,7 +82,7 @@ internal sealed class NativeTrayIcon : IDisposable
 
         if (ShellNotifyIcon(NIM_MODIFY, ref data))
         {
-            ApplyWindowIcon(updatedIcon);
+            ApplyTaskbarIcon(updatedIcon);
             DestroyIcon(_statusIcon);
             _statusIcon = updatedIcon;
             _status = status;
@@ -88,6 +91,17 @@ internal sealed class NativeTrayIcon : IDisposable
         {
             DestroyIcon(updatedIcon);
         }
+    }
+
+    public void RefreshWindowIcons()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        ApplyTitleBarIcon(_windowIcon);
+        ApplyTaskbarIcon(_statusIcon);
     }
 
     private IntPtr WindowSubclassProc(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData)
@@ -116,6 +130,8 @@ internal sealed class NativeTrayIcon : IDisposable
         };
         ShellNotifyIcon(NIM_DELETE, ref data);
         RemoveWindowSubclass(_windowHandle, _subclassProc, SubclassId);
+        DestroyIcon(_windowIcon);
+        _windowIcon = IntPtr.Zero;
         DestroyIcon(_statusIcon);
         _statusIcon = IntPtr.Zero;
         _isDisposed = true;
@@ -175,7 +191,7 @@ internal sealed class NativeTrayIcon : IDisposable
             {
                 Size = (uint)Marshal.SizeOf<BitmapInfoHeader>(),
                 Width = size,
-                Height = size,
+                Height = -size,
                 Planes = 1,
                 BitCount = 32
             }
@@ -269,9 +285,13 @@ internal sealed class NativeTrayIcon : IDisposable
         pixels[index + 3] = 255;
     }
 
-    private void ApplyWindowIcon(IntPtr icon)
+    private void ApplyTitleBarIcon(IntPtr icon)
     {
         SendMessage(_windowHandle, WM_SETICON, (IntPtr)ICON_SMALL, icon);
+    }
+
+    private void ApplyTaskbarIcon(IntPtr icon)
+    {
         SendMessage(_windowHandle, WM_SETICON, (IntPtr)ICON_BIG, icon);
     }
 

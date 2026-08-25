@@ -43,7 +43,14 @@
                 <Label Text="{Binding OtherTimerText}" TextColor="{StaticResource Success}" HorizontalTextAlignment="Center" />
             </Border>
 
-            <Button Text="Zeiterfassung starten" Command="{Binding StartTimerCommand}" IsVisible="{Binding CanStartTimer}" />
+            <VerticalStackLayout Spacing="8" IsVisible="{Binding CanStartTimer}">
+                <Label Text="Kommentar" FontAttributes="Bold" />
+                <Border Padding="16,8" Stroke="{DynamicResource Outline}" BackgroundColor="{DynamicResource SurfaceContainer}">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Editor Text="{Binding StartNote}" Placeholder="Optional, z. B. Kundenbesprechung" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="90" />
+                </Border>
+                <Button Text="Zeiterfassung starten" Command="{Binding StartTimerCommand}" />
+            </VerticalStackLayout>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                 <Button Text="Manuell hinzufügen" Command="{Binding AddManualCommand}" Style="{StaticResource SecondaryButton}" />
                 <Button Grid.Column="1" Text="Details anzeigen" Command="{Binding ShowEntriesCommand}" Style="{StaticResource SecondaryButton}" />
