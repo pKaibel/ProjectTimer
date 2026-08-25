@@ -15,6 +15,7 @@ public partial class App : MauiWinUIApplication
     private WinUiWindow? _mainWindow;
     private AppWindow? _appWindow;
     private TraySettingsService? _traySettings;
+    private TimeTrackingService? _tracking;
     private IntPtr _mainWindowHandle;
 
     public App()
@@ -42,6 +43,12 @@ public partial class App : MauiWinUIApplication
             SetTaskbarWindowTitle(_traySettings.ShowTaskbarLabel);
         }
         _trayIcon ??= new NativeTrayIcon(_mainWindowHandle, RestoreMainWindow);
+        _tracking = _mauiApp?.Services.GetRequiredService<TimeTrackingService>();
+        if (_tracking is not null)
+        {
+            _tracking.StatusChanged += OnTrackingStatusChanged;
+            _ = SynchronizeTrayIconAsync();
+        }
         window.Closed += OnMainWindowClosed;
     }
 
@@ -53,7 +60,31 @@ public partial class App : MauiWinUIApplication
         {
             _traySettings.TaskbarLabelVisibilityChanged -= OnTaskbarLabelVisibilityChanged;
         }
+        if (_tracking is not null)
+        {
+            _tracking.StatusChanged -= OnTrackingStatusChanged;
+        }
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+    }
+
+    private async Task SynchronizeTrayIconAsync()
+    {
+        try
+        {
+            if (_tracking is not null)
+            {
+                OnTrackingStatusChanged(await _tracking.GetStatusAsync());
+            }
+        }
+        catch
+        {
+            // The tray icon remains blue if the local database is not available yet.
+        }
+    }
+
+    private void OnTrackingStatusChanged(TimeTrackingStatus status)
+    {
+        _mainWindow?.DispatcherQueue.TryEnqueue(() => _trayIcon?.SetStatus(status));
     }
 
     private void OnTaskbarLabelVisibilityChanged(bool isVisible)

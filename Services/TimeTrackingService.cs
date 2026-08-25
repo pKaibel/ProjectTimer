@@ -2,6 +2,13 @@ using ProjectTimer.Models;
 
 namespace ProjectTimer.Services;
 
+public enum TimeTrackingStatus
+{
+    Idle,
+    Running,
+    Paused
+}
+
 public sealed class TimeTrackingService
 {
     private readonly DatabaseService _database;
@@ -17,10 +24,21 @@ public sealed class TimeTrackingService
     public Task<ActiveTimerState?> GetActiveTimerAsync() => _database.GetActiveTimerAsync();
 
     public event EventHandler? RunningTimerPaused;
+    public event Action<TimeTrackingStatus>? StatusChanged;
 
     public Task<ActiveTimerState?> GetTimerForProjectAsync(int projectId) => _database.GetTimerForProjectAsync(projectId);
 
     public Task<List<ActiveTimerState>> GetTimerStatesAsync() => _database.GetTimerStatesAsync();
+
+    public async Task<TimeTrackingStatus> GetStatusAsync()
+    {
+        var timers = await _database.GetTimerStatesAsync();
+        return timers.Any(timer => !timer.IsPaused)
+            ? TimeTrackingStatus.Running
+            : timers.Any()
+                ? TimeTrackingStatus.Paused
+                : TimeTrackingStatus.Idle;
+    }
 
     public async Task<ActiveTimerState> StartAsync(int projectId)
     {
@@ -41,6 +59,7 @@ public sealed class TimeTrackingService
                 IsPaused = false
             };
             await _database.StartTimerAsync(state);
+            await NotifyStatusChangedAsync();
             return state;
         }
         finally
@@ -59,6 +78,7 @@ public sealed class TimeTrackingService
 
             TimeEntry? entry = active.IsPaused ? null : _timeEntryFactory.CreateTracked(active, DateTime.UtcNow);
             await _database.CompleteTimerAsync(active, entry);
+            await NotifyStatusChangedAsync();
         }
         finally
         {
@@ -85,6 +105,7 @@ public sealed class TimeTrackingService
 
             var entry = _timeEntryFactory.CreateTracked(active, DateTime.UtcNow);
             await _database.PauseTimerAsync(active, entry);
+            await NotifyStatusChangedAsync();
         }
         finally
         {
@@ -106,6 +127,7 @@ public sealed class TimeTrackingService
             var entry = _timeEntryFactory.CreateTracked(active, pausedAtUtc ?? DateTime.UtcNow);
             await _database.PauseTimerAsync(active, entry);
             RunningTimerPaused?.Invoke(this, EventArgs.Empty);
+            await NotifyStatusChangedAsync();
             return true;
         }
         finally
@@ -138,16 +160,22 @@ public sealed class TimeTrackingService
             }
 
             var entry = _timeEntryFactory.CreateTracked(running, DateTime.UtcNow);
+            ActiveTimerState switchedTimer;
             if (target is not null)
             {
                 // Returning to a paused project finishes the temporary timer.
                 await _database.CompleteTimerAsync(running, entry);
-                return await _database.ResumeTimerAsync(toProjectId, DateTime.UtcNow);
+                switchedTimer = await _database.ResumeTimerAsync(toProjectId, DateTime.UtcNow);
+            }
+            else
+            {
+                // A new target keeps the source available as a paused timer.
+                await _database.PauseTimerAsync(running, entry);
+                switchedTimer = await StartAsyncCore(toProjectId);
             }
 
-            // A new target keeps the source available as a paused timer.
-            await _database.PauseTimerAsync(running, entry);
-            return await StartAsyncCore(toProjectId);
+            await NotifyStatusChangedAsync();
+            return switchedTimer;
         }
         finally
         {
@@ -160,7 +188,9 @@ public sealed class TimeTrackingService
         await _gate.WaitAsync();
         try
         {
-            return await _database.ResumeTimerAsync(projectId, DateTime.UtcNow);
+            var resumedTimer = await _database.ResumeTimerAsync(projectId, DateTime.UtcNow);
+            await NotifyStatusChangedAsync();
+            return resumedTimer;
         }
         finally
         {
@@ -180,6 +210,8 @@ public sealed class TimeTrackingService
         await _database.StartTimerAsync(state);
         return state;
     }
+
+    private async Task NotifyStatusChangedAsync() => StatusChanged?.Invoke(await GetStatusAsync());
 
     public static TimeSpan GetElapsed(ActiveTimerState state, DateTime? nowUtc = null)
     {
