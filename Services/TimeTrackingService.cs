@@ -16,6 +16,8 @@ public sealed class TimeTrackingService
 
     public Task<ActiveTimerState?> GetActiveTimerAsync() => _database.GetActiveTimerAsync();
 
+    public event EventHandler? RunningTimerPaused;
+
     public Task<ActiveTimerState?> GetTimerForProjectAsync(int projectId) => _database.GetTimerForProjectAsync(projectId);
 
     public Task<List<ActiveTimerState>> GetTimerStatesAsync() => _database.GetTimerStatesAsync();
@@ -83,6 +85,28 @@ public sealed class TimeTrackingService
 
             var entry = _timeEntryFactory.CreateTracked(active, DateTime.UtcNow);
             await _database.PauseTimerAsync(active, entry);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<bool> PauseRunningTimerAsync(DateTime? pausedAtUtc = null)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var active = await _database.GetActiveTimerAsync();
+            if (active is null)
+            {
+                return false;
+            }
+
+            var entry = _timeEntryFactory.CreateTracked(active, pausedAtUtc ?? DateTime.UtcNow);
+            await _database.PauseTimerAsync(active, entry);
+            RunningTimerPaused?.Invoke(this, EventArgs.Empty);
+            return true;
         }
         finally
         {

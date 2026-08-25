@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.OnboardingPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ProjectTimer.ViewModels"
+    x:DataType="vm:OnboardingViewModel"
+    BackgroundColor="{DynamicResource Surface}">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='24,36', Tablet='48,42', Desktop='64,48'}" Spacing="24" MaximumWidthRequest="760" HorizontalOptions="Fill">
+            <Border Padding="28" BackgroundColor="{DynamicResource PrimaryContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="28" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Border WidthRequest="58" HeightRequest="58" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                        <Label Text="PT" FontAttributes="Bold" FontSize="20" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <Label Text="{Binding Title}" Style="{StaticResource PageTitle}" TextColor="{DynamicResource OnPrimaryContainer}" />
+                    <Label Text="{Binding Introduction}" FontSize="16" TextColor="{DynamicResource OnPrimaryContainer}" />
+                    <Label Text="{Binding Version}" FontSize="13" TextColor="{DynamicResource OnPrimaryContainer}" Opacity="0.75" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="So unterstützt dich die App" Style="{StaticResource SectionTitle}" />
+                <Label Text="Alle Daten bleiben lokal auf deinem Gerät und können zusätzlich als CSV gesichert werden." Style="{StaticResource MutedLabel}" />
+            </VerticalStackLayout>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                    <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Label Text="1" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Projekte und Zeiten erfassen" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Lege Projekte an und starte die Zeiterfassung mit einem Tipp. Laufende Timer lassen sich pausieren und fortsetzen." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                    <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Label Text="2" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Schnell zwischen Projekten wechseln" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Beim Wechsel wird der bisherige Timer pausiert und die Zeit des gewählten Projekts gestartet. So bleibt jede Minute richtig zugeordnet." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                    <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Label Text="3" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Auswertungen auf einen Blick" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Die Startseite zeigt deine aktuelle Woche. In der Übersicht vergleichst du Tag, Woche, Monat und Jahr mit Balkendiagrammen." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                    <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Label Text="4" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Daten sichern und Darstellung anpassen" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Exportiere und importiere deine Daten als CSV. Wähle außerdem eines von drei Farbschemata sowie den Dunkelmodus." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Button Text="Los geht's" Command="{Binding FinishCommand}" Style="{StaticResource PrimaryButton}" Margin="0,4,0,16" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -36,8 +36,17 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- Debug builds use a separate MSIX package identity, so F5 can coexist with the released app. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' and '$(Configuration)' == 'Debug'">
+    <AppxManifest Remove="Platforms\Windows\Package.appxmanifest" />
+    <AppxManifest Include="Platforms\Windows\Package.Debug.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.0" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
   </ItemGroup>
 </Project>

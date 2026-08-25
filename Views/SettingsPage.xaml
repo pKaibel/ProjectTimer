@@ -25,6 +25,28 @@
                 </Grid>
             </Border>
 
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0" IsVisible="{OnPlatform WinUI=True, Default=False}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Beim Minimieren in den Infobereich verschieben" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Die App bleibt über das Taskleisten-Icon erreichbar." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <Switch Grid.Column="1" IsToggled="{Binding MinimizeToTray}" OnColor="{DynamicResource Primary}" ThumbColor="{DynamicResource OnPrimary}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0" IsVisible="{OnPlatform WinUI=True, Default=False}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Beschriftung in der Taskleiste anzeigen" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Zeigt neben dem ProjectTimer-Icon den Fenstertitel an." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <Switch Grid.Column="1" IsToggled="{Binding ShowTaskbarLabel}" OnColor="{DynamicResource Primary}" ThumbColor="{DynamicResource OnPrimary}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
             <VerticalStackLayout Spacing="12">
                 <Label Text="Farbschema" Style="{StaticResource SectionTitle}" />
                 <Label Text="Alle drei Schemas verwenden zugängliche Kontraste für Text und Aktionen." Style="{StaticResource MutedLabel}" />

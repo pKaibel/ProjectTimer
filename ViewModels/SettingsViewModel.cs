@@ -6,14 +6,20 @@ namespace ProjectTimer.ViewModels;
 public sealed class SettingsViewModel : BaseViewModel
 {
     private readonly ThemeService _themeService;
+    private readonly TraySettingsService _traySettings;
     private readonly CsvBackupService _backup;
     private bool _isDarkMode;
+    private bool _minimizeToTray;
+    private bool _showTaskbarLabel;
 
-    public SettingsViewModel(ThemeService themeService, CsvBackupService backup)
+    public SettingsViewModel(ThemeService themeService, TraySettingsService traySettings, CsvBackupService backup)
     {
         _themeService = themeService;
+        _traySettings = traySettings;
         _backup = backup;
         IsDarkMode = themeService.IsDarkMode;
+        MinimizeToTray = traySettings.MinimizeToTray;
+        ShowTaskbarLabel = traySettings.ShowTaskbarLabel;
         Schemes = new ObservableCollection<ThemeSchemeItem>(Enum.GetValues<ColorScheme>()
             .Select(scheme => new ThemeSchemeItem(themeService.CreateOption(scheme), scheme == themeService.SelectedScheme)));
         SelectSchemeCommand = new AsyncCommand<ThemeSchemeItem>(SelectSchemeAsync);
@@ -50,6 +56,30 @@ public sealed class SettingsViewModel : BaseViewModel
             if (SetProperty(ref _isDarkMode, value))
             {
                 _themeService.SetDarkMode(value);
+            }
+        }
+    }
+
+    public bool MinimizeToTray
+    {
+        get => _minimizeToTray;
+        set
+        {
+            if (SetProperty(ref _minimizeToTray, value))
+            {
+                _traySettings.MinimizeToTray = value;
+            }
+        }
+    }
+
+    public bool ShowTaskbarLabel
+    {
+        get => _showTaskbarLabel;
+        set
+        {
+            if (SetProperty(ref _showTaskbarLabel, value))
+            {
+                _traySettings.ShowTaskbarLabel = value;
             }
         }
     }

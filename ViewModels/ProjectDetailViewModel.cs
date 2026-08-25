@@ -24,6 +24,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     private bool _isTrackingHere;
     private bool _isTrackingAnotherProject;
     private bool _isPaused;
+    private bool _isObservingTimerPause;
     private string _timerStatusText = "Zeiterfassung läuft";
 
     public ProjectDetailViewModel(
@@ -163,11 +164,13 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     public async Task OnAppearingAsync()
     {
         await LoadAsync();
+        StartObservingTimerPause();
         StartDisplayTimer();
     }
 
     public void OnDisappearing()
     {
+        StopObservingTimerPause();
         _timerCancellation?.Cancel();
         _timerCancellation?.Dispose();
         _timerCancellation = null;
@@ -327,6 +330,48 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         _timerCancellation?.Dispose();
         _timerCancellation = new CancellationTokenSource();
         _ = RunDisplayTimerAsync(_timerCancellation.Token);
+    }
+
+    private void StartObservingTimerPause()
+    {
+        if (_isObservingTimerPause)
+        {
+            return;
+        }
+
+        _tracking.RunningTimerPaused += OnRunningTimerPaused;
+        _isObservingTimerPause = true;
+    }
+
+    private void StopObservingTimerPause()
+    {
+        if (!_isObservingTimerPause)
+        {
+            return;
+        }
+
+        _tracking.RunningTimerPaused -= OnRunningTimerPaused;
+        _isObservingTimerPause = false;
+    }
+
+    private void OnRunningTimerPaused(object? sender, EventArgs e)
+    {
+        Microsoft.Maui.ApplicationModel.MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            if (_projectId <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await RefreshActiveTimerAsync();
+            }
+            catch
+            {
+                // The next navigation or refresh reloads the persisted timer state.
+            }
+        });
     }
 
     private async Task RunDisplayTimerAsync(CancellationToken cancellationToken)
