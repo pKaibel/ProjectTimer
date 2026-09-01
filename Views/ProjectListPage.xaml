@@ -47,6 +47,48 @@
                             <Button Text="Übersicht anzeigen" Command="{Binding OpenOverviewCommand}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" />
                         </VerticalStackLayout>
                     </Border>
+                    <VerticalStackLayout Spacing="10" IsVisible="{Binding HasQuickAccessProjects}">
+                        <Label Text="Aktive Projekte" FontSize="19" FontAttributes="Bold" />
+                        <FlexLayout Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Start" BindableLayout.ItemsSource="{Binding QuickAccessProjects}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ProjectListItemViewModel">
+                                        <Border FlexLayout.Basis="31.8%" Margin="0,0,12,12" Padding="16" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                                            <Border.Triggers>
+                                                <DataTrigger TargetType="Border" Binding="{Binding IsTimerActive}" Value="True">
+                                                    <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryContainer}" />
+                                                    <Setter Property="Stroke" Value="{DynamicResource Primary}" />
+                                                    <Setter Property="StrokeThickness" Value="2" />
+                                                </DataTrigger>
+                                            </Border.Triggers>
+                                            <VerticalStackLayout Spacing="10">
+                                                <Label Text="{Binding Name}" FontSize="17" FontAttributes="Bold" LineBreakMode="TailTruncation" MaxLines="2" />
+                                                <Label Text="{Binding QuickAccessStatusText}" HeightRequest="20" FontSize="13" FontAttributes="Bold" VerticalTextAlignment="Center">
+                                                    <Label.Triggers>
+                                                        <DataTrigger TargetType="Label" Binding="{Binding IsTimerActive}" Value="True">
+                                                            <Setter Property="TextColor" Value="{DynamicResource Success}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger TargetType="Label" Binding="{Binding IsTimerInactive}" Value="True">
+                                                            <Setter Property="TextColor" Value="{DynamicResource OnSurfaceVariant}" />
+                                                        </DataTrigger>
+                                                    </Label.Triggers>
+                                                </Label>
+                                                <Label Text="{Binding TotalDurationText, StringFormat='Gesamtzeit: {0}'}" HeightRequest="20" FontSize="13" Style="{StaticResource MutedLabel}" VerticalTextAlignment="Center" />
+                                                <Label Text="{Binding CurrentDurationDisplayText}" HeightRequest="20" FontSize="13" TextColor="{DynamicResource Primary}" FontAttributes="Bold" VerticalTextAlignment="Center" />
+                                                <Button Text="{Binding TimerButtonText}" Clicked="OnQuickAccessTimerClicked" Style="{StaticResource PrimaryButton}">
+                                                    <Button.Triggers>
+                                                        <DataTrigger TargetType="Button" Binding="{Binding IsTimerRunning}" Value="True">
+                                                            <Setter Property="BackgroundColor" Value="{DynamicResource Error}" />
+                                                            <Setter Property="TextColor" Value="{DynamicResource OnError}" />
+                                                        </DataTrigger>
+                                                    </Button.Triggers>
+                                                </Button>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Meine Projekte" Style="{StaticResource PageTitle}" />
                         <Label Text="Arbeitszeit lokal und zuverlässig erfassen" Style="{StaticResource MutedLabel}" />
@@ -67,11 +109,15 @@
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.OpenProjectCommand}" CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
-                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="5">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="5">
                                         <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" />
                                         <Label Grid.Column="1" Text="{Binding TotalDurationText}" FontSize="17" FontAttributes="Bold" TextColor="{DynamicResource Primary}" VerticalTextAlignment="Center" />
-                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Description}" Style="{StaticResource MutedLabel}" IsVisible="{Binding HasDescription}" LineBreakMode="TailTruncation" MaxLines="2" />
-                                        <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontSize="13" FontAttributes="Bold" IsVisible="{Binding IsTimerActive}" Margin="0,3,0,0" />
+                                        <VerticalStackLayout Grid.Column="2" Spacing="0" VerticalOptions="Center">
+                                            <Label Text="Aktiv" FontSize="12" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                                            <Switch IsToggled="{Binding IsQuickAccess, Mode=OneWay}" Toggled="OnProjectQuickAccessToggled" HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Description}" Style="{StaticResource MutedLabel}" IsVisible="{Binding HasDescription}" LineBreakMode="TailTruncation" MaxLines="2" />
+                                        <Label Grid.Row="2" Grid.ColumnSpan="3" Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontSize="13" FontAttributes="Bold" IsVisible="{Binding IsTimerActive}" Margin="0,3,0,0" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>

@@ -41,6 +41,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<OnboardingService>();
         builder.Services.AddSingleton<TraySettingsService>();
+        builder.Services.AddSingleton<OverviewSettingsService>();
         builder.Services.AddSingleton<CsvBackupService>();
         builder.Services.AddSingleton<TimeOverviewService>();
         builder.Services.AddSingleton<INavigationService, ShellNavigationService>();

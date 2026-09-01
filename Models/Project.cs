@@ -14,6 +14,10 @@ public sealed class Project
     [MaxLength(2000)]
     public string? Description { get; set; }
 
+    public bool IsQuickAccess { get; set; }
+
+    public int QuickAccessOrder { get; set; }
+
     public long CreatedAtUtcTicks { get; set; }
 
     [Ignore]

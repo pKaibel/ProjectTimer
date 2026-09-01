@@ -99,6 +99,7 @@ public partial class App : MauiWinUIApplication
 
     private void OnMainWindowClosed(object sender, Microsoft.UI.Xaml.WindowEventArgs args)
     {
+        StopRunningTimerSafely();
         if (sender is WinUiWindow window)
         {
             window.Activated -= OnMainWindowActivated;
@@ -297,18 +298,29 @@ public partial class App : MauiWinUIApplication
             return;
         }
 
+        // Windows sends this event immediately before sleep or hibernation.
+        StopRunningTimerSafely();
+    }
+
+    private void StopRunningTimerSafely()
+    {
         try
         {
-            // Windows sends this event immediately before sleep or hibernation.
-            _mauiApp.Services
-                .GetRequiredService<TimeTrackingService>()
-                .PauseRunningTimerAsync(DateTime.UtcNow)
-                .GetAwaiter()
-                .GetResult();
+            var tracking = _tracking ?? _mauiApp?.Services.GetRequiredService<TimeTrackingService>();
+            if (tracking is not null)
+            {
+                // This handler runs on the UI thread. Running the asynchronous
+                // database write there and then blocking on it can deadlock the
+                // window shutdown. The tracking service has its own lock, so it
+                // is safe to complete the write on a worker thread instead.
+                Task.Run(() => tracking.StopRunningTimerAsync(DateTime.UtcNow))
+                    .GetAwaiter()
+                    .GetResult();
+            }
         }
         catch
         {
-            // A system power notification must never prevent Windows from sleeping.
+            // Closing the window must still succeed if the local data store is unavailable.
         }
     }
 }

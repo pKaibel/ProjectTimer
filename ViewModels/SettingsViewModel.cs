@@ -7,19 +7,23 @@ public sealed class SettingsViewModel : BaseViewModel
 {
     private readonly ThemeService _themeService;
     private readonly TraySettingsService _traySettings;
+    private readonly OverviewSettingsService _overviewSettings;
     private readonly CsvBackupService _backup;
     private bool _isDarkMode;
     private bool _minimizeToTray;
     private bool _showTaskbarLabel;
+    private bool _showWeekendsOnStartPage;
 
-    public SettingsViewModel(ThemeService themeService, TraySettingsService traySettings, CsvBackupService backup)
+    public SettingsViewModel(ThemeService themeService, TraySettingsService traySettings, OverviewSettingsService overviewSettings, CsvBackupService backup)
     {
         _themeService = themeService;
         _traySettings = traySettings;
+        _overviewSettings = overviewSettings;
         _backup = backup;
         IsDarkMode = themeService.IsDarkMode;
         MinimizeToTray = traySettings.MinimizeToTray;
         ShowTaskbarLabel = traySettings.ShowTaskbarLabel;
+        ShowWeekendsOnStartPage = overviewSettings.ShowWeekendsOnStartPage;
         Schemes = new ObservableCollection<ThemeSchemeItem>(Enum.GetValues<ColorScheme>()
             .Select(scheme => new ThemeSchemeItem(themeService.CreateOption(scheme), scheme == themeService.SelectedScheme)));
         SelectSchemeCommand = new AsyncCommand<ThemeSchemeItem>(SelectSchemeAsync);
@@ -80,6 +84,18 @@ public sealed class SettingsViewModel : BaseViewModel
             if (SetProperty(ref _showTaskbarLabel, value))
             {
                 _traySettings.ShowTaskbarLabel = value;
+            }
+        }
+    }
+
+    public bool ShowWeekendsOnStartPage
+    {
+        get => _showWeekendsOnStartPage;
+        set
+        {
+            if (SetProperty(ref _showWeekendsOnStartPage, value))
+            {
+                _overviewSettings.ShowWeekendsOnStartPage = value;
             }
         }
     }

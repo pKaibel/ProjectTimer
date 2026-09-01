@@ -23,7 +23,7 @@
 
             <VerticalStackLayout Spacing="6">
                 <Label Text="So unterstützt dich die App" Style="{StaticResource SectionTitle}" />
-                <Label Text="Alle Daten bleiben lokal auf deinem Gerät und können zusätzlich als CSV gesichert werden." Style="{StaticResource MutedLabel}" />
+                <Label Text="Plane deine Arbeit projektbezogen, behalte laufende Zeiten im Blick und sichere alles bei Bedarf als CSV." Style="{StaticResource MutedLabel}" />
             </VerticalStackLayout>
 
             <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
@@ -35,7 +35,7 @@
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                         <Label Text="Projekte und Zeiten erfassen" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="Lege Projekte an und starte die Zeiterfassung mit einem Tipp. Laufende Timer lassen sich pausieren und fortsetzen." Style="{StaticResource MutedLabel}" />
+                        <Label Text="Lege Projekte an, füge beim Start einen Kommentar hinzu und erfasse Zeiten automatisch oder manuell. Abschnitte unter einer Minute werden nicht gespeichert." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
@@ -48,8 +48,8 @@
                         <Label Text="2" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
-                        <Label Text="Schnell zwischen Projekten wechseln" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="Beim Wechsel wird der bisherige Timer pausiert und die Zeit des gewählten Projekts gestartet. So bleibt jede Minute richtig zugeordnet." Style="{StaticResource MutedLabel}" />
+                        <Label Text="Aktive Projekte schnell steuern" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Markiere häufig verwendete Projekte als aktiv. Sie erscheinen als Schnellkacheln auf der Startseite – startet eines davon, wird ein anderer laufender Timer beendet." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
@@ -63,7 +63,7 @@
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                         <Label Text="Auswertungen auf einen Blick" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="Die Startseite zeigt deine aktuelle Woche. In der Übersicht vergleichst du Tag, Woche, Monat und Jahr mit Balkendiagrammen." Style="{StaticResource MutedLabel}" />
+                        <Label Text="Die Startseite zeigt die aktuelle Woche und den Status deiner aktiven Projekte. In der Übersicht vergleichst du Tag, Woche, Monat und Jahr; Wochenenden lassen sich in den Einstellungen einblenden." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
@@ -76,8 +76,8 @@
                         <Label Text="4" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
-                        <Label Text="Daten sichern und Darstellung anpassen" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="Exportiere und importiere deine Daten als CSV. Wähle außerdem eines von drei Farbschemata sowie den Dunkelmodus." Style="{StaticResource MutedLabel}" />
+                        <Label Text="Lokal, sicher und anpassbar" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Deine Daten bleiben auf deinem Gerät. Exportiere und importiere sie als CSV, wähle ein Farbschema oder den Dunkelmodus. Laufende Zeiten werden beim Schließen der App oder beim Standby beendet." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>

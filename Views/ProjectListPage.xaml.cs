@@ -16,5 +16,28 @@ public partial class ProjectListPage : ContentPage
     {
         base.OnAppearing();
         await _viewModel.LoadAsync();
+        _viewModel.StartDisplayTimer();
+    }
+
+    protected override void OnDisappearing()
+    {
+        _viewModel.StopDisplayTimer();
+        base.OnDisappearing();
+    }
+
+    private async void OnProjectQuickAccessToggled(object? sender, ToggledEventArgs e)
+    {
+        if (sender is Switch { IsFocused: true, BindingContext: ProjectListItemViewModel project })
+        {
+            await _viewModel.SetProjectQuickAccessAsync(project, e.Value);
+        }
+    }
+
+    private async void OnQuickAccessTimerClicked(object? sender, EventArgs e)
+    {
+        if (sender is Button { BindingContext: ProjectListItemViewModel project })
+        {
+            await _viewModel.ToggleQuickAccessTimerAsync(project);
+        }
     }
 }

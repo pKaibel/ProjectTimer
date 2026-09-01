@@ -22,10 +22,10 @@ public sealed class TimeOverviewService
         _database = database;
     }
 
-    public async Task<TimeOverview> GetOverviewAsync(OverviewPeriod period)
+    public async Task<TimeOverview> GetOverviewAsync(OverviewPeriod period, bool includeWeekends = true)
     {
         var today = DateTime.Today;
-        var buckets = CreateBuckets(period, today);
+        var buckets = CreateBuckets(period, today, includeWeekends);
         var entries = await _database.GetAllTimeEntriesAsync();
         var runningTimer = await _database.GetActiveTimerAsync();
         if (runningTimer is not null)
@@ -55,14 +55,14 @@ public sealed class TimeOverviewService
         return new TimeOverview(GetTitle(period, today), GetSubtitle(period, today), DurationFormatter.FormatLong(total), bars);
     }
 
-    private static List<Bucket> CreateBuckets(OverviewPeriod period, DateTime today)
+    private static List<Bucket> CreateBuckets(OverviewPeriod period, DateTime today, bool includeWeekends)
     {
         return period switch
         {
             OverviewPeriod.Day => Enumerable.Range(0, 24)
                 .Select(hour => new Bucket(today.AddHours(hour), today.AddHours(hour + 1), $"{hour:00} Uhr"))
                 .ToList(),
-            OverviewPeriod.Week => CreateDateBuckets(GetWeekStart(today), 7, date => date.ToString("ddd", CultureInfo.CurrentCulture)),
+            OverviewPeriod.Week => CreateDateBuckets(GetWeekStart(today), includeWeekends ? 7 : 5, date => date.ToString("ddd", CultureInfo.CurrentCulture)),
             OverviewPeriod.Month => CreateDateBuckets(new DateTime(today.Year, today.Month, 1), DateTime.DaysInMonth(today.Year, today.Month), date => date.Day.ToString("00", CultureInfo.CurrentCulture)),
             OverviewPeriod.Year => Enumerable.Range(1, 12)
                 .Select(month => new Bucket(new DateTime(today.Year, month, 1), new DateTime(today.Year, month, 1).AddMonths(1), new DateTime(today.Year, month, 1).ToString("MMM", CultureInfo.CurrentCulture)))

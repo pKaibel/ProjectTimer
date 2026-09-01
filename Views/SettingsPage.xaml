@@ -47,6 +47,17 @@
                 </Grid>
             </Border>
 
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Wochenende in der Startübersicht anzeigen" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Zeigt Samstag und Sonntag zusätzlich in der Wochenübersicht auf der Startseite." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <Switch Grid.Column="1" IsToggled="{Binding ShowWeekendsOnStartPage}" OnColor="{DynamicResource Primary}" ThumbColor="{DynamicResource OnPrimary}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
             <VerticalStackLayout Spacing="12">
                 <Label Text="Farbschema" Style="{StaticResource SectionTitle}" />
                 <Label Text="Alle drei Schemas verwenden zugängliche Kontraste für Text und Aktionen." Style="{StaticResource MutedLabel}" />

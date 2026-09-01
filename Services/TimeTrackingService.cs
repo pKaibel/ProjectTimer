@@ -11,6 +11,7 @@ public enum TimeTrackingStatus
 
 public sealed class TimeTrackingService
 {
+    private static readonly TimeSpan MinimumTrackedDuration = TimeSpan.FromMinutes(1);
     private readonly DatabaseService _database;
     private readonly TimeEntryFactory _timeEntryFactory;
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -69,6 +70,37 @@ public sealed class TimeTrackingService
         }
     }
 
+    public async Task<ActiveTimerState> StartOrResumeReplacingRunningTimerAsync(int projectId)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var running = await _database.GetActiveTimerAsync();
+            if (running?.ProjectId == projectId)
+            {
+                return running;
+            }
+
+            if (running is not null)
+            {
+                var completedEntry = CreateTrackedEntryIfLongEnough(running, DateTime.UtcNow);
+                await _database.CompleteTimerAsync(running, completedEntry);
+            }
+
+            var target = await _database.GetTimerForProjectAsync(projectId);
+            var startedTimer = target is { IsPaused: true }
+                ? await _database.ResumeTimerAsync(projectId, DateTime.UtcNow)
+                : await StartAsyncCore(projectId);
+
+            await NotifyStatusChangedAsync();
+            return startedTimer;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     public async Task StopAsync(int projectId)
     {
         await _gate.WaitAsync();
@@ -77,7 +109,7 @@ public sealed class TimeTrackingService
             var active = await _database.GetTimerForProjectAsync(projectId)
                 ?? throw new InvalidOperationException("Es läuft keine Zeiterfassung.");
 
-            TimeEntry? entry = active.IsPaused ? null : _timeEntryFactory.CreateTracked(active, DateTime.UtcNow);
+            TimeEntry? entry = active.IsPaused ? null : CreateTrackedEntryIfLongEnough(active, DateTime.UtcNow);
             await _database.CompleteTimerAsync(active, entry);
             await NotifyStatusChangedAsync();
         }
@@ -104,8 +136,9 @@ public sealed class TimeTrackingService
                 throw new InvalidOperationException("Die Zeiterfassung ist bereits pausiert.");
             }
 
-            var entry = _timeEntryFactory.CreateTracked(active, DateTime.UtcNow);
-            await _database.PauseTimerAsync(active, entry);
+            var pausedAtUtc = DateTime.UtcNow;
+            var entry = CreateTrackedEntryIfLongEnough(active, pausedAtUtc);
+            await _database.PauseTimerAsync(active, entry, GetRunningElapsed(active, pausedAtUtc));
             await NotifyStatusChangedAsync();
         }
         finally
@@ -125,9 +158,32 @@ public sealed class TimeTrackingService
                 return false;
             }
 
-            var entry = _timeEntryFactory.CreateTracked(active, pausedAtUtc ?? DateTime.UtcNow);
-            await _database.PauseTimerAsync(active, entry);
+            var stoppedAtUtc = pausedAtUtc ?? DateTime.UtcNow;
+            var entry = CreateTrackedEntryIfLongEnough(active, stoppedAtUtc);
+            await _database.PauseTimerAsync(active, entry, GetRunningElapsed(active, stoppedAtUtc));
             RunningTimerPaused?.Invoke(this, EventArgs.Empty);
+            await NotifyStatusChangedAsync();
+            return true;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<bool> StopRunningTimerAsync(DateTime? stoppedAtUtc = null)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var active = await _database.GetActiveTimerAsync();
+            if (active is null)
+            {
+                return false;
+            }
+
+            var entry = CreateTrackedEntryIfLongEnough(active, stoppedAtUtc ?? DateTime.UtcNow);
+            await _database.CompleteTimerAsync(active, entry);
             await NotifyStatusChangedAsync();
             return true;
         }
@@ -160,18 +216,19 @@ public sealed class TimeTrackingService
                 throw new InvalidOperationException("Für das Zielprojekt läuft bereits eine Zeiterfassung.");
             }
 
-            var entry = _timeEntryFactory.CreateTracked(running, DateTime.UtcNow);
+            var switchedAtUtc = DateTime.UtcNow;
+            var entry = CreateTrackedEntryIfLongEnough(running, switchedAtUtc);
             ActiveTimerState switchedTimer;
             if (target is not null)
             {
                 // Returning to a paused project finishes the temporary timer.
                 await _database.CompleteTimerAsync(running, entry);
-                switchedTimer = await _database.ResumeTimerAsync(toProjectId, DateTime.UtcNow);
+                switchedTimer = await _database.ResumeTimerAsync(toProjectId, switchedAtUtc);
             }
             else
             {
                 // A new target keeps the source available as a paused timer.
-                await _database.PauseTimerAsync(running, entry);
+                await _database.PauseTimerAsync(running, entry, GetRunningElapsed(running, switchedAtUtc));
                 switchedTimer = await StartAsyncCore(toProjectId);
             }
 
@@ -213,6 +270,18 @@ public sealed class TimeTrackingService
     }
 
     private async Task NotifyStatusChangedAsync() => StatusChanged?.Invoke(await GetStatusAsync());
+
+    private TimeEntry? CreateTrackedEntryIfLongEnough(ActiveTimerState activeTimer, DateTime endedAtUtc)
+    {
+        var entry = _timeEntryFactory.CreateTracked(activeTimer, endedAtUtc);
+        return entry.Duration >= MinimumTrackedDuration ? entry : null;
+    }
+
+    private static TimeSpan GetRunningElapsed(ActiveTimerState activeTimer, DateTime endedAtUtc)
+    {
+        var elapsed = endedAtUtc.ToUniversalTime() - activeTimer.StartedAtUtc;
+        return elapsed < TimeSpan.Zero ? TimeSpan.Zero : elapsed;
+    }
 
     public static TimeSpan GetElapsed(ActiveTimerState state, DateTime? nowUtc = null)
     {

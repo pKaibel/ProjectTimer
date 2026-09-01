@@ -1,8 +1,12 @@
 bin/
 obj/
 .vs/
+AppPackages/
 *.user
 *.suo
 *.db3
 *.db3-shm
 *.db3-wal
+*.pfx
+*.pvk
+*.snk

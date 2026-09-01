@@ -37,6 +37,7 @@ public sealed class DatabaseService
             await _database.CreateTableAsync<Project>();
             await _database.CreateTableAsync<TimeEntry>();
             await _database.CreateTableAsync<ActiveTimerState>();
+            await MigrateProjectColumnsAsync();
             await MigrateActiveTimerStateAsync();
             await MigrateActiveTimerColumnsAsync();
             _isInitialized = true;
@@ -44,6 +45,22 @@ public sealed class DatabaseService
         finally
         {
             _initializationLock.Release();
+        }
+    }
+
+    private async Task MigrateProjectColumnsAsync()
+    {
+        var columns = await _database.QueryAsync<DatabaseColumn>("PRAGMA table_info(Projects)");
+        if (columns.All(column => column.Name != "IsQuickAccess"))
+        {
+            await _database.ExecuteAsync(
+                "ALTER TABLE Projects ADD COLUMN IsQuickAccess INTEGER NOT NULL DEFAULT 0");
+        }
+
+        if (columns.All(column => column.Name != "QuickAccessOrder"))
+        {
+            await _database.ExecuteAsync(
+                "ALTER TABLE Projects ADD COLUMN QuickAccessOrder INTEGER NOT NULL DEFAULT 0");
         }
     }
 
@@ -102,7 +119,7 @@ public sealed class DatabaseService
         const string sql = """
             WITH ProjectTotals AS
             (
-                SELECT p.Id, p.Name, p.Description, p.CreatedAtUtcTicks,
+                SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks,
                        COALESCE(SUM(t.EndUtcTicks - t.StartUtcTicks), 0) AS TotalTicks,
                        MAX(CASE
                                WHEN t.EndUtcTicks > t.CreatedAtUtcTicks THEN t.EndUtcTicks
@@ -110,9 +127,9 @@ public sealed class DatabaseService
                            END) AS LastEntryUtcTicks
                 FROM Projects p
                 LEFT JOIN TimeEntries t ON t.ProjectId = p.Id
-                GROUP BY p.Id, p.Name, p.Description, p.CreatedAtUtcTicks
+                GROUP BY p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks
             )
-            SELECT p.Id, p.Name, p.Description, p.CreatedAtUtcTicks, p.TotalTicks
+            SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks, p.TotalTicks
             FROM ProjectTotals p
             LEFT JOIN ActiveTimeEntry a ON a.ProjectId = p.Id
             ORDER BY MAX(
@@ -153,12 +170,30 @@ public sealed class DatabaseService
             return await _database.InsertAsync(project);
         }
 
-        if (await _database.FindAsync<Project>(project.Id) is null)
+        var existing = await _database.FindAsync<Project>(project.Id);
+        if (existing is null)
         {
             throw new InvalidOperationException("Das Projekt wurde nicht gefunden.");
         }
 
+        project.IsQuickAccess = existing.IsQuickAccess;
+        project.QuickAccessOrder = existing.QuickAccessOrder;
         return await _database.UpdateAsync(project);
+    }
+
+    public async Task SetProjectQuickAccessAsync(int projectId, bool isQuickAccess)
+    {
+        await InitializeAsync();
+        var project = await _database.FindAsync<Project>(projectId)
+            ?? throw new InvalidOperationException("Das Projekt wurde nicht gefunden.");
+        if (isQuickAccess && !project.IsQuickAccess)
+        {
+            project.QuickAccessOrder = await _database.ExecuteScalarAsync<int>(
+                "SELECT COALESCE(MAX(QuickAccessOrder), 0) + 1 FROM Projects WHERE IsQuickAccess = 1");
+        }
+
+        project.IsQuickAccess = isQuickAccess;
+        await _database.UpdateAsync(project);
     }
 
     public async Task<int> DeleteProjectAsync(Project project)
@@ -293,10 +328,13 @@ public sealed class DatabaseService
         });
     }
 
-    public async Task PauseTimerAsync(ActiveTimerState expectedState, TimeEntry pausedEntry)
+    public async Task PauseTimerAsync(ActiveTimerState expectedState, TimeEntry? pausedEntry, TimeSpan elapsed)
     {
         await InitializeAsync();
-        _timeEntryFactory.Validate(pausedEntry);
+        if (pausedEntry is not null)
+        {
+            _timeEntryFactory.Validate(pausedEntry);
+        }
 
         await _database.RunInTransactionAsync(connection =>
         {
@@ -306,8 +344,12 @@ public sealed class DatabaseService
                 throw new InvalidOperationException("Die Zeiterfassung ist bereits pausiert.");
             }
 
-            connection.Insert(pausedEntry);
-            current.AccumulatedTicks += pausedEntry.Duration.Ticks;
+            if (pausedEntry is not null)
+            {
+                connection.Insert(pausedEntry);
+            }
+
+            current.AccumulatedTicks += Math.Max(0, elapsed.Ticks);
             current.IsPaused = true;
             connection.Update(current);
         });
@@ -359,11 +401,6 @@ public sealed class DatabaseService
             if (current.IsPaused && completedEntry is not null)
             {
                 throw new InvalidOperationException("Eine pausierte Zeiterfassung kann nicht weiterlaufen.");
-            }
-
-            if (!current.IsPaused && completedEntry is null)
-            {
-                throw new InvalidOperationException("Der laufende Timer kann nicht ohne Zeiteintrag beendet werden.");
             }
 
             if (connection.Find<Project>(current.ProjectId) is null)
