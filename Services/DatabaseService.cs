@@ -63,11 +63,16 @@ public sealed class DatabaseService
                 "ALTER TABLE Projects ADD COLUMN QuickAccessOrder INTEGER NOT NULL DEFAULT 0");
         }
 
-        if (columns.All(column => column.Name != "IsArchived"))
+        var hasArchiveColumn = columns.Any(column => column.Name == "IsArchived");
+        if (!hasArchiveColumn)
         {
             await _database.ExecuteAsync(
                 "ALTER TABLE Projects ADD COLUMN IsArchived INTEGER NOT NULL DEFAULT 0");
         }
+
+        // Projects created before archiving existed must remain visible. SQLite
+        // databases from early builds can contain NULL in newly added columns.
+        await _database.ExecuteAsync("UPDATE Projects SET IsArchived = 0 WHERE IsArchived IS NULL");
     }
 
     private async Task MigrateActiveTimerStateAsync()
@@ -139,7 +144,7 @@ public sealed class DatabaseService
                            END) AS LastEntryUtcTicks
                 FROM Projects p
                 LEFT JOIN TimeEntries t ON t.ProjectId = p.Id
-                WHERE p.IsArchived = ?
+                WHERE COALESCE(p.IsArchived, 0) = ?
                 GROUP BY p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.IsArchived, p.CreatedAtUtcTicks
             )
             SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.IsArchived, p.CreatedAtUtcTicks, p.TotalTicks

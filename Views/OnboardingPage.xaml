@@ -35,7 +35,7 @@
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                         <Label Text="Projekte und Zeiten erfassen" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="Lege Projekte an, füge beim Start einen Kommentar hinzu und erfasse Zeiten automatisch oder manuell. Abschnitte unter einer Minute werden nicht gespeichert." Style="{StaticResource MutedLabel}" />
+                        <Label Text="Lege Projekte an, füge beim Start einen Kommentar hinzu und bearbeite ihn bei laufender Zeiterfassung bei Bedarf weiter. Erfasse Zeiten automatisch oder manuell; Abschnitte unter einer Minute werden nicht gespeichert." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
@@ -74,6 +74,20 @@
                     <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
                         <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
                         <Label Text="4" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Projekte sicher verwalten" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Archiviere Projekte mit allen Zeiten und stelle sie bei Bedarf wieder her. Beim Löschen weist dich die App auf betroffene Zeiteinträge hin und bietet vorher eine kontrastreich hervorgehobene CSV-Sicherung an." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                    <Border WidthRequest="48" HeightRequest="48" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Label Text="5" FontAttributes="Bold" FontSize="18" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
                     </Border>
                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                         <Label Text="Lokal, sicher und anpassbar" FontSize="18" FontAttributes="Bold" />
