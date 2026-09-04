@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ProjectTimer.Views.ProjectDeletionDialogPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="{DynamicResource Surface}">
+    <Grid Padding="{OnIdiom Phone='20', Tablet='36', Desktop='48'}">
+        <Border Padding="28" MaximumWidthRequest="520" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1">
+            <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Projekt löschen" Style="{StaticResource PageTitle}" />
+                <Label x:Name="DeleteMessageLabel" Style="{StaticResource MutedLabel}" />
+                <Border Padding="16" BackgroundColor="{DynamicResource ErrorContainer}" StrokeThickness="0">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Label Text="Der Löschvorgang kann nicht rückgängig gemacht werden. Sichere die Daten vorher als CSV-Datei." TextColor="{DynamicResource OnErrorContainer}" />
+                </Border>
+                <Button Text="CSV-Sicherung exportieren" Clicked="OnExportBackupClicked" Style="{StaticResource PrimaryButton}" />
+                <Button Text="Ohne Sicherung löschen" Clicked="OnDeleteWithoutBackupClicked" Style="{StaticResource DangerButton}" />
+                <Button Text="Abbrechen" Clicked="OnCancelClicked" Style="{StaticResource SecondaryButton}" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

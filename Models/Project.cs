@@ -18,6 +18,8 @@ public sealed class Project
 
     public int QuickAccessOrder { get; set; }
 
+    public bool IsArchived { get; set; }
+
     public long CreatedAtUtcTicks { get; set; }
 
     [Ignore]

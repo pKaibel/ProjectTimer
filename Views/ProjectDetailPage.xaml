@@ -8,7 +8,6 @@
     Title="{Binding ProjectName}">
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Bearbeiten" Command="{Binding EditProjectCommand}" />
-        <ToolbarItem Text="Löschen" Command="{Binding DeleteProjectCommand}" Order="Secondary" />
     </ContentPage.ToolbarItems>
     <ScrollView>
         <VerticalStackLayout Padding="{OnIdiom Phone='20,18', Tablet='36,28', Desktop='48,32'}" Spacing="18" MaximumWidthRequest="800" HorizontalOptions="Fill">
@@ -31,6 +30,11 @@
                     <Label Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <Label Text="{Binding ElapsedText}" FontSize="42" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <Label Text="{Binding StartedAtText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Kommentar" FontAttributes="Bold" />
+                        <Editor Text="{Binding ActiveTimerNote}" Placeholder="Optional, z. B. Kundenbesprechung" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="70" />
+                        <Button Text="Kommentar speichern" Command="{Binding SaveTimerNoteCommand}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" />
+                    </VerticalStackLayout>
                     <Button Text="Zeiterfassung pausieren" Command="{Binding PauseTimerCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
                     <Button Text="Projekt wechseln" Command="{Binding SwitchProjectCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
                     <Button Text="Zeiterfassung fortsetzen" Command="{Binding ResumeTimerCommand}" IsVisible="{Binding IsPaused}" />

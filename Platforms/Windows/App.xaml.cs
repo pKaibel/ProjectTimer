@@ -14,6 +14,7 @@ public partial class App : MauiWinUIApplication
     private const string SingleInstanceKey = "ProjectTimer.Main";
     private const string TaskbarWindowTitle = "Zeiterfassung";
     private const string WindowIconFileName = "appicon.ico";
+    private const string PendingPowerSuspendUtcTicksKey = "pending_power_suspend_utc_ticks";
 
     private AppInstance? _appInstance;
     private MauiApp? _mauiApp;
@@ -86,6 +87,7 @@ public partial class App : MauiWinUIApplication
         if (_tracking is not null)
         {
             _tracking.StatusChanged += OnTrackingStatusChanged;
+            RecoverTimerAfterPowerSuspend();
             _ = SynchronizeTrayIconAsync();
         }
         window.Closed += OnMainWindowClosed;
@@ -293,16 +295,50 @@ public partial class App : MauiWinUIApplication
 
     private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
     {
-        if (e.Mode != PowerModes.Suspend || _mauiApp is null)
+        if (_mauiApp is null)
         {
             return;
         }
 
-        // Windows sends this event immediately before sleep or hibernation.
-        StopRunningTimerSafely();
+        if (e.Mode == PowerModes.Suspend)
+        {
+            // Store the timestamp first. If Windows freezes the process before
+            // the database write completes, it is recovered on resume.
+            var suspendedAtUtc = DateTime.UtcNow;
+            Preferences.Default.Set(PendingPowerSuspendUtcTicksKey, suspendedAtUtc.Ticks);
+            if (StopRunningTimerSafely(suspendedAtUtc))
+            {
+                Preferences.Default.Remove(PendingPowerSuspendUtcTicksKey);
+            }
+        }
+        else if (e.Mode == PowerModes.Resume)
+        {
+            RecoverTimerAfterPowerSuspend();
+        }
     }
 
-    private void StopRunningTimerSafely()
+    private void RecoverTimerAfterPowerSuspend()
+    {
+        if (!Preferences.Default.ContainsKey(PendingPowerSuspendUtcTicksKey))
+        {
+            return;
+        }
+
+        var ticks = Preferences.Default.Get(PendingPowerSuspendUtcTicksKey, 0L);
+        if (ticks <= 0)
+        {
+            Preferences.Default.Remove(PendingPowerSuspendUtcTicksKey);
+            return;
+        }
+
+        var suspendedAtUtc = new DateTime(ticks, DateTimeKind.Utc);
+        if (StopRunningTimerSafely(suspendedAtUtc))
+        {
+            Preferences.Default.Remove(PendingPowerSuspendUtcTicksKey);
+        }
+    }
+
+    private bool StopRunningTimerSafely(DateTime? stoppedAtUtc = null)
     {
         try
         {
@@ -313,14 +349,17 @@ public partial class App : MauiWinUIApplication
                 // database write there and then blocking on it can deadlock the
                 // window shutdown. The tracking service has its own lock, so it
                 // is safe to complete the write on a worker thread instead.
-                Task.Run(() => tracking.StopRunningTimerAsync(DateTime.UtcNow))
+                Task.Run(() => tracking.StopRunningTimerAsync(stoppedAtUtc ?? DateTime.UtcNow))
                     .GetAwaiter()
                     .GetResult();
             }
+
+            return true;
         }
         catch
         {
-            // Closing the window must still succeed if the local data store is unavailable.
+            // Closing the window or sleeping must still succeed if the local data store is unavailable.
+            return false;
         }
     }
 }

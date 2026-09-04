@@ -25,6 +25,12 @@
             </VerticalStackLayout>
             <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
             <Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" />
+            <VerticalStackLayout Spacing="10" IsVisible="{Binding IsExistingProject}" Margin="0,12,0,0">
+                <Label Text="Projekt verwalten" Style="{StaticResource SectionTitle}" />
+                <Label Text="Archivierte Projekte bleiben mit ihren Zeiten erhalten und können später wiederhergestellt werden." Style="{StaticResource MutedLabel}" />
+                <Button Text="{Binding ArchiveButtonText}" Command="{Binding ToggleArchiveCommand}" Style="{StaticResource SecondaryButton}" />
+                <Button Text="Projekt löschen" Command="{Binding DeleteProjectCommand}" Style="{StaticResource DangerButton}" />
+            </VerticalStackLayout>
             <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
         </VerticalStackLayout>
     </ScrollView>

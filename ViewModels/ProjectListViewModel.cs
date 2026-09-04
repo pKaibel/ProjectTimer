@@ -12,6 +12,7 @@ public sealed class ProjectListViewModel : BaseViewModel
     private readonly TimeTrackingService _timeTracking;
     private readonly INavigationService _navigation;
     private CancellationTokenSource? _displayTimerCancellation;
+    private bool _showArchivedProjects;
 
     public ProjectListViewModel(DatabaseService database, TimeOverviewService overview, OverviewSettingsService overviewSettings, TimeTrackingService timeTracking, INavigationService navigation)
     {
@@ -39,6 +40,24 @@ public sealed class ProjectListViewModel : BaseViewModel
     }
     public bool IsEmpty => Projects.Count == 0 && !IsBusy;
     public bool HasQuickAccessProjects => QuickAccessProjects.Count > 0;
+    public bool ShowArchivedProjects
+    {
+        get => _showArchivedProjects;
+        private set
+        {
+            if (SetProperty(ref _showArchivedProjects, value))
+            {
+                OnPropertyChanged(nameof(ProjectListTitle));
+                OnPropertyChanged(nameof(EmptyProjectsTitle));
+                OnPropertyChanged(nameof(EmptyProjectsText));
+            }
+        }
+    }
+    public string ProjectListTitle => ShowArchivedProjects ? "Archivierte Projekte" : "Meine Projekte";
+    public string EmptyProjectsTitle => ShowArchivedProjects ? "Keine archivierten Projekte" : "Noch keine Projekte";
+    public string EmptyProjectsText => ShowArchivedProjects
+        ? "Archivierte Projekte erscheinen hier, bis du sie wiederherstellst."
+        : "Erstelle dein erstes Projekt und beginne mit der Zeiterfassung.";
     public AsyncCommand AddProjectCommand { get; }
     public AsyncCommand OpenSettingsCommand { get; }
     public AsyncCommand OpenInfoCommand { get; }
@@ -65,6 +84,12 @@ public sealed class ProjectListViewModel : BaseViewModel
         _displayTimerCancellation?.Cancel();
         _displayTimerCancellation?.Dispose();
         _displayTimerCancellation = null;
+    }
+
+    public async Task SetShowArchivedProjectsAsync(bool showArchivedProjects)
+    {
+        ShowArchivedProjects = showArchivedProjects;
+        await LoadAsync();
     }
 
     public async Task SetProjectQuickAccessAsync(ProjectListItemViewModel project, bool isQuickAccess)
@@ -104,7 +129,7 @@ public sealed class ProjectListViewModel : BaseViewModel
 
     private async Task LoadCoreAsync()
     {
-        var projects = await _database.GetProjectsWithTotalsAsync();
+        var projects = await _database.GetProjectsWithTotalsAsync(ShowArchivedProjects);
         var timerStates = await _database.GetTimerStatesAsync();
         var overview = await _overview.GetOverviewAsync(OverviewPeriod.Week, _overviewSettings.ShowWeekendsOnStartPage);
         Projects.Clear();
@@ -122,7 +147,7 @@ public sealed class ProjectListViewModel : BaseViewModel
         {
             Projects.Add(item);
         }
-        foreach (var item in items.Where(item => item.IsQuickAccess).OrderBy(item => item.QuickAccessOrder).ThenBy(item => item.Id))
+        foreach (var item in items.Where(item => item.IsQuickAccess && !item.IsArchived).OrderBy(item => item.QuickAccessOrder).ThenBy(item => item.Id))
         {
             QuickAccessProjects.Add(item);
         }

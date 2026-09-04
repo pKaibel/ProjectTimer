@@ -90,7 +90,13 @@
                         </FlexLayout>
                     </VerticalStackLayout>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Meine Projekte" Style="{StaticResource PageTitle}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <Label Text="{Binding ProjectListTitle}" Style="{StaticResource PageTitle}" />
+                            <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                <Label Text="Archiviert" Style="{StaticResource MutedLabel}" FontSize="13" VerticalTextAlignment="Center" />
+                                <Switch IsToggled="{Binding ShowArchivedProjects, Mode=OneWay}" Toggled="OnShowArchivedProjectsToggled" />
+                            </HorizontalStackLayout>
+                        </Grid>
                         <Label Text="Arbeitszeit lokal und zuverlässig erfassen" Style="{StaticResource MutedLabel}" />
                         <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" Margin="0,8,0,0" />
                     </VerticalStackLayout>
@@ -124,8 +130,8 @@
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
                     <VerticalStackLayout Padding="20,48" Spacing="8" HorizontalOptions="Center" IsVisible="{Binding IsEmpty}">
-                        <Label Text="Noch keine Projekte" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
-                        <Label Text="Erstellen Sie Ihr erstes Projekt und beginnen Sie mit der Zeiterfassung." Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" MaximumWidthRequest="420" />
+                        <Label Text="{Binding EmptyProjectsTitle}" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding EmptyProjectsText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" MaximumWidthRequest="420" />
                     </VerticalStackLayout>
                     <Button Text="＋ Neues Projekt" Command="{Binding AddProjectCommand}" Margin="0,4,0,0" />
                 </VerticalStackLayout>

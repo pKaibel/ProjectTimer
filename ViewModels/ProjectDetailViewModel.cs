@@ -11,6 +11,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     private readonly TimeTrackingService _tracking;
     private readonly INavigationService _navigation;
     private readonly IUserDialogService _dialogs;
+    private readonly CsvBackupService _backup;
     private Project? _project;
     private ActiveTimerState? _activeTimer;
     private CancellationTokenSource? _timerCancellation;
@@ -22,22 +23,26 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     private string _startedAtText = string.Empty;
     private string _otherTimerText = string.Empty;
     private string? _startNote;
+    private string? _activeTimerNote;
     private bool _isTrackingHere;
     private bool _isTrackingAnotherProject;
     private bool _isPaused;
     private bool _isObservingTimerPause;
+    private bool _isArchived;
     private string _timerStatusText = "Zeiterfassung läuft";
 
     public ProjectDetailViewModel(
         DatabaseService database,
         TimeTrackingService tracking,
         INavigationService navigation,
-        IUserDialogService dialogs)
+        IUserDialogService dialogs,
+        CsvBackupService backup)
     {
         _database = database;
         _tracking = tracking;
         _navigation = navigation;
         _dialogs = dialogs;
+        _backup = backup;
         StartTimerCommand = new AsyncCommand(StartTimerAsync, () => CanStartTimer);
         StopTimerCommand = new AsyncCommand(StopTimerAsync, () => IsTrackingHere);
         PauseTimerCommand = new AsyncCommand(PauseTimerAsync, () => IsTrackingHere && !IsPaused);
@@ -47,6 +52,8 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         ShowEntriesCommand = new AsyncCommand(ShowEntriesAsync);
         EditProjectCommand = new AsyncCommand(EditProjectAsync);
         DeleteProjectCommand = new AsyncCommand(DeleteProjectAsync);
+        ToggleArchiveCommand = new AsyncCommand(ToggleArchiveAsync);
+        SaveTimerNoteCommand = new AsyncCommand(SaveTimerNoteAsync, () => IsTrackingHere);
     }
 
     public string ProjectName
@@ -99,6 +106,12 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         set => SetProperty(ref _startNote, value);
     }
 
+    public string? ActiveTimerNote
+    {
+        get => _activeTimerNote;
+        set => SetProperty(ref _activeTimerNote, value);
+    }
+
     public bool IsTrackingHere
     {
         get => _isTrackingHere;
@@ -113,6 +126,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
                 StopTimerCommand.RaiseCanExecuteChanged();
                 PauseTimerCommand.RaiseCanExecuteChanged();
                 ResumeTimerCommand.RaiseCanExecuteChanged();
+                SaveTimerNoteCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -153,6 +167,18 @@ public sealed class ProjectDetailViewModel : BaseViewModel
 
     public bool CanStartTimer => !IsTrackingHere && !IsTrackingAnotherProject;
     public bool IsRunning => IsTrackingHere && !IsPaused;
+    public bool IsArchived
+    {
+        get => _isArchived;
+        private set
+        {
+            if (SetProperty(ref _isArchived, value))
+            {
+                OnPropertyChanged(nameof(ArchiveButtonText));
+            }
+        }
+    }
+    public string ArchiveButtonText => IsArchived ? "Wiederherstellen" : "Archivieren";
     public AsyncCommand StartTimerCommand { get; }
     public AsyncCommand StopTimerCommand { get; }
     public AsyncCommand PauseTimerCommand { get; }
@@ -162,6 +188,8 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     public AsyncCommand ShowEntriesCommand { get; }
     public AsyncCommand EditProjectCommand { get; }
     public AsyncCommand DeleteProjectCommand { get; }
+    public AsyncCommand ToggleArchiveCommand { get; }
+    public AsyncCommand SaveTimerNoteCommand { get; }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
@@ -196,6 +224,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
             ?? throw new InvalidOperationException("Das Projekt wurde nicht gefunden.");
         ProjectName = _project.Name;
         Description = _project.Description;
+        IsArchived = _project.IsArchived;
         TotalDurationText = DurationFormatter.FormatLong(await _database.GetTotalDurationAsync(_projectId));
         await RefreshActiveTimerAsync();
     }
@@ -210,6 +239,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
 
         if (IsTrackingHere && _activeTimer is not null)
         {
+            ActiveTimerNote = _activeTimer.Note;
             TimerStatusText = IsPaused ? "Zeiterfassung pausiert" : "Zeiterfassung läuft";
             StartedAtText = IsPaused
                 ? "Die bisherige Arbeitszeit ist gespeichert."
@@ -218,6 +248,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         }
         else
         {
+            ActiveTimerNote = null;
             ElapsedText = "00:00:00";
             StartedAtText = string.Empty;
             TimerStatusText = "Zeiterfassung läuft";
@@ -253,6 +284,15 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         {
             await _tracking.StopAsync(_projectId);
             await LoadCoreAsync();
+        });
+    }
+
+    private async Task SaveTimerNoteAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            _activeTimer = await _tracking.UpdateNoteAsync(_projectId, ActiveTimerNote);
+            ActiveTimerNote = _activeTimer.Note;
         });
     }
 
@@ -317,9 +357,53 @@ public sealed class ProjectDetailViewModel : BaseViewModel
             return;
         }
 
+        var entryCount = await _database.GetTimeEntryCountAsync(_project.Id);
+        var choice = await _dialogs.ChooseProjectDeletionAsync(_project.Name, entryCount);
+        if (choice == ProjectDeletionChoice.Cancel)
+        {
+            return;
+        }
+
+        if (choice == ProjectDeletionChoice.ExportBackup)
+        {
+            await _backup.ExportAsync();
+            var confirmed = await _dialogs.ConfirmAsync(
+                "Projekt endgültig löschen",
+                $"Die CSV-Sicherung wurde geöffnet. „{_project.Name}“ und {entryCount} zugehörige Zeiteinträge jetzt unwiderruflich löschen?",
+                "Endgültig löschen");
+            if (!confirmed)
+            {
+                return;
+            }
+        }
+
+        await RunBusyAsync(async () =>
+        {
+            await _database.DeleteProjectAsync(_project);
+            await _navigation.GoBackAsync();
+        });
+    }
+
+    private async Task ToggleArchiveAsync()
+    {
+        if (_project is null)
+        {
+            return;
+        }
+
+        if (!IsArchived && IsTrackingHere)
+        {
+            await _dialogs.ShowErrorAsync("Beende oder lösche die pausierte Zeiterfassung, bevor du das Projekt archivierst.");
+            return;
+        }
+
+        var action = IsArchived ? "wiederherstellen" : "archivieren";
         var confirmed = await _dialogs.ConfirmAsync(
-            "Projekt löschen",
-            $"„{_project.Name}“ und alle zugehörigen Zeiteinträge wirklich löschen?");
+            $"Projekt {action}",
+            IsArchived
+                ? $"„{_project.Name}“ wieder in der aktuellen Projektliste anzeigen?"
+                : $"„{_project.Name}“ archivieren? Die erfassten Zeiten bleiben erhalten und das Projekt wird aus der Standardansicht ausgeblendet.",
+            IsArchived ? "Wiederherstellen" : "Archivieren");
         if (!confirmed)
         {
             return;
@@ -327,7 +411,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
 
         await RunBusyAsync(async () =>
         {
-            await _database.DeleteProjectAsync(_project);
+            await _database.SetProjectArchivedAsync(_project.Id, !IsArchived);
             await _navigation.GoBackAsync();
         });
     }

@@ -62,6 +62,12 @@ public sealed class DatabaseService
             await _database.ExecuteAsync(
                 "ALTER TABLE Projects ADD COLUMN QuickAccessOrder INTEGER NOT NULL DEFAULT 0");
         }
+
+        if (columns.All(column => column.Name != "IsArchived"))
+        {
+            await _database.ExecuteAsync(
+                "ALTER TABLE Projects ADD COLUMN IsArchived INTEGER NOT NULL DEFAULT 0");
+        }
     }
 
     private async Task MigrateActiveTimerStateAsync()
@@ -107,19 +113,25 @@ public sealed class DatabaseService
         }
     }
 
-    public async Task<List<Project>> GetProjectsAsync()
+    public async Task<List<Project>> GetProjectsAsync(bool? isArchived = null)
     {
         await InitializeAsync();
-        return await _database.Table<Project>().OrderBy(project => project.Name).ToListAsync();
+        var query = _database.Table<Project>();
+        if (isArchived.HasValue)
+        {
+            query = query.Where(project => project.IsArchived == isArchived.Value);
+        }
+
+        return await query.OrderBy(project => project.Name).ToListAsync();
     }
 
-    public async Task<List<ProjectTotal>> GetProjectsWithTotalsAsync()
+    public async Task<List<ProjectTotal>> GetProjectsWithTotalsAsync(bool isArchived = false)
     {
         await InitializeAsync();
         const string sql = """
             WITH ProjectTotals AS
             (
-                SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks,
+                SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.IsArchived, p.CreatedAtUtcTicks,
                        COALESCE(SUM(t.EndUtcTicks - t.StartUtcTicks), 0) AS TotalTicks,
                        MAX(CASE
                                WHEN t.EndUtcTicks > t.CreatedAtUtcTicks THEN t.EndUtcTicks
@@ -127,9 +139,10 @@ public sealed class DatabaseService
                            END) AS LastEntryUtcTicks
                 FROM Projects p
                 LEFT JOIN TimeEntries t ON t.ProjectId = p.Id
-                GROUP BY p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks
+                WHERE p.IsArchived = ?
+                GROUP BY p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.IsArchived, p.CreatedAtUtcTicks
             )
-            SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.CreatedAtUtcTicks, p.TotalTicks
+            SELECT p.Id, p.Name, p.Description, p.IsQuickAccess, p.QuickAccessOrder, p.IsArchived, p.CreatedAtUtcTicks, p.TotalTicks
             FROM ProjectTotals p
             LEFT JOIN ActiveTimeEntry a ON a.ProjectId = p.Id
             ORDER BY MAX(
@@ -139,7 +152,7 @@ public sealed class DatabaseService
                      ) DESC,
                      p.Name COLLATE NOCASE
             """;
-        return await _database.QueryAsync<ProjectTotal>(sql);
+        return await _database.QueryAsync<ProjectTotal>(sql, isArchived ? 1 : 0);
     }
 
     public async Task<Project?> GetProjectAsync(int id)
@@ -178,6 +191,7 @@ public sealed class DatabaseService
 
         project.IsQuickAccess = existing.IsQuickAccess;
         project.QuickAccessOrder = existing.QuickAccessOrder;
+        project.IsArchived = existing.IsArchived;
         return await _database.UpdateAsync(project);
     }
 
@@ -194,6 +208,28 @@ public sealed class DatabaseService
 
         project.IsQuickAccess = isQuickAccess;
         await _database.UpdateAsync(project);
+    }
+
+    public async Task SetProjectArchivedAsync(int projectId, bool isArchived)
+    {
+        await InitializeAsync();
+        await _database.RunInTransactionAsync(connection =>
+        {
+            var project = connection.Find<Project>(projectId)
+                ?? throw new InvalidOperationException("Das Projekt wurde nicht gefunden.");
+            if (isArchived && connection.Table<ActiveTimerState>().Any(timer => timer.ProjectId == projectId))
+            {
+                throw new InvalidOperationException("Beende oder lösche die pausierte Zeiterfassung, bevor du das Projekt archivierst.");
+            }
+
+            project.IsArchived = isArchived;
+            if (isArchived)
+            {
+                project.IsQuickAccess = false;
+            }
+
+            connection.Update(project);
+        });
     }
 
     public async Task<int> DeleteProjectAsync(Project project)
@@ -226,6 +262,13 @@ public sealed class DatabaseService
             .Where(entry => entry.ProjectId == projectId)
             .OrderByDescending(entry => entry.StartUtcTicks)
             .ToListAsync();
+    }
+
+    public async Task<int> GetTimeEntryCountAsync(int projectId)
+    {
+        await InitializeAsync();
+        return await _database.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM TimeEntries WHERE ProjectId = ?", projectId);
     }
 
     public async Task<List<TimeEntry>> GetAllTimeEntriesAsync()
@@ -385,6 +428,22 @@ public sealed class DatabaseService
             resumedTimer = current;
         });
         return resumedTimer ?? throw new InvalidOperationException("Die Zeiterfassung konnte nicht fortgesetzt werden.");
+    }
+
+    public async Task<ActiveTimerState> UpdateTimerNoteAsync(ActiveTimerState expectedState, string? note)
+    {
+        await InitializeAsync();
+        ActiveTimerState? updatedTimer = null;
+        var normalizedNote = _timeEntryFactory.NormalizeNote(note);
+        await _database.RunInTransactionAsync(connection =>
+        {
+            var current = FindExpectedActiveTimer(connection, expectedState);
+            current.Note = normalizedNote;
+            connection.Update(current);
+            updatedTimer = current;
+        });
+
+        return updatedTimer ?? throw new InvalidOperationException("Der Kommentar konnte nicht gespeichert werden.");
     }
 
     public async Task CompleteTimerAsync(ActiveTimerState expectedState, TimeEntry? completedEntry)

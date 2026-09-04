@@ -40,4 +40,12 @@ public partial class ProjectListPage : ContentPage
             await _viewModel.ToggleQuickAccessTimerAsync(project);
         }
     }
+
+    private async void OnShowArchivedProjectsToggled(object? sender, ToggledEventArgs e)
+    {
+        if (sender is Switch { IsFocused: true })
+        {
+            await _viewModel.SetShowArchivedProjectsAsync(e.Value);
+        }
+    }
 }

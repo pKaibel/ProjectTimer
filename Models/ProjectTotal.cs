@@ -7,6 +7,7 @@ public sealed class ProjectTotal
     public string? Description { get; set; }
     public bool IsQuickAccess { get; set; }
     public int QuickAccessOrder { get; set; }
+    public bool IsArchived { get; set; }
     public long CreatedAtUtcTicks { get; set; }
     public long TotalTicks { get; set; }
 }

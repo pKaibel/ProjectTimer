@@ -256,6 +256,21 @@ public sealed class TimeTrackingService
         }
     }
 
+    public async Task<ActiveTimerState> UpdateNoteAsync(int projectId, string? note)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var active = await _database.GetTimerForProjectAsync(projectId)
+                ?? throw new InvalidOperationException("Es läuft keine Zeiterfassung.");
+            return await _database.UpdateTimerNoteAsync(active, note);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     private async Task<ActiveTimerState> StartAsyncCore(int projectId)
     {
         var state = new ActiveTimerState

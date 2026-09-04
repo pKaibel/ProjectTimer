@@ -16,6 +16,7 @@ public sealed class ProjectListItemViewModel : BaseViewModel
         Description = project.Description;
         _isQuickAccess = project.IsQuickAccess;
         QuickAccessOrder = project.QuickAccessOrder;
+        IsArchived = project.IsArchived;
         TotalDuration = TimeSpan.FromTicks(Math.Max(0, project.TotalTicks));
         IsTimerActive = activeTimer?.ProjectId == project.Id;
         IsTimerPaused = IsTimerActive && activeTimer?.IsPaused == true;
@@ -28,6 +29,7 @@ public sealed class ProjectListItemViewModel : BaseViewModel
     public string? Description { get; }
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
     public int QuickAccessOrder { get; }
+    public bool IsArchived { get; }
     public TimeSpan TotalDuration { get; }
     public string TotalDurationText => DurationFormatter.Format(TotalDuration);
     public bool IsTimerActive { get; }

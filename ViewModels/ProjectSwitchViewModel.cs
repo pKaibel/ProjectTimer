@@ -44,7 +44,7 @@ public sealed class ProjectSwitchViewModel : BaseViewModel
         SourceProjectName = source.Name;
 
         var timerStates = await _tracking.GetTimerStatesAsync();
-        var projects = await _database.GetProjectsAsync();
+        var projects = await _database.GetProjectsAsync(false);
         Projects.Clear();
         foreach (var project in projects.Where(project => project.Id != _sourceProjectId))
         {
