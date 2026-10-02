@@ -7,7 +7,7 @@
     x:DataType="vm:ProjectDetailViewModel"
     Title="{Binding ProjectName}">
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Bearbeiten" Command="{Binding EditProjectCommand}" />
+        <ToolbarItem Text="✎ Bearbeiten" Command="{Binding EditProjectCommand}" />
     </ContentPage.ToolbarItems>
     <ScrollView>
         <VerticalStackLayout Padding="{OnIdiom Phone='20,18', Tablet='36,28', Desktop='48,32'}" Spacing="18" MaximumWidthRequest="800" HorizontalOptions="Fill">

@@ -4,7 +4,10 @@ using ProjectTimer.Views;
 
 #if WINDOWS
 using Microsoft.Maui.LifecycleEvents;
+using Microsoft.Maui.Handlers;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml.Controls;
+using ProjectTimer.Platforms.Windows;
 using Windows.Graphics;
 using WinRT.Interop;
 #endif
@@ -19,6 +22,26 @@ public static class MauiProgram
         builder.UseMauiApp<App>();
 
 #if WINDOWS
+        ToolbarHandler.Mapper.AppendToMapping("EmphasizePrimaryToolbarActions", (handler, _) =>
+        {
+            if (handler.MauiContext?.Services.GetService<ToolbarActionStyler>() is not { } styler)
+            {
+                return;
+            }
+
+            void ApplyStyles()
+            {
+                foreach (var action in handler.PlatformView.PrimaryCommands.OfType<AppBarButton>())
+                {
+                    styler.Apply(action);
+                }
+            }
+
+            ApplyStyles();
+            handler.PlatformView.PrimaryCommands.VectorChanged += (_, _) => ApplyStyles();
+            handler.PlatformView.Loaded += (_, _) => ApplyStyles();
+        });
+
         builder.ConfigureLifecycleEvents(events =>
         {
             events.AddWindows(windows => windows.OnWindowCreated(window =>
@@ -39,10 +62,14 @@ public static class MauiProgram
         builder.Services.AddSingleton<TimeEntryFactory>();
         builder.Services.AddSingleton<TimeTrackingService>();
         builder.Services.AddSingleton<ThemeService>();
+#if WINDOWS
+        builder.Services.AddSingleton<ToolbarActionStyler>();
+#endif
         builder.Services.AddSingleton<OnboardingService>();
         builder.Services.AddSingleton<TraySettingsService>();
         builder.Services.AddSingleton<OverviewSettingsService>();
         builder.Services.AddSingleton<CsvBackupService>();
+        builder.Services.AddSingleton<TestDataService>();
         builder.Services.AddSingleton<TimeOverviewService>();
         builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
         builder.Services.AddSingleton<IUserDialogService, UserDialogService>();

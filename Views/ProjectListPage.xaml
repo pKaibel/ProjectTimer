@@ -9,7 +9,7 @@
     x:DataType="vm:ProjectListViewModel"
     Title="Zeiterfassung">
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Neu" Command="{Binding AddProjectCommand}" />
+        <ToolbarItem Text="+ Neu" Command="{Binding AddProjectCommand}" />
         <ToolbarItem Text="Einstellungen" Command="{Binding OpenSettingsCommand}" Order="Secondary" />
         <ToolbarItem Text="Info" Command="{Binding OpenInfoCommand}" Order="Secondary" />
     </ContentPage.ToolbarItems>
@@ -54,6 +54,9 @@
                                     <DataTemplate x:DataType="vm:ProjectListItemViewModel">
                                         <Border FlexLayout.Basis="31.8%" Margin="0,0,12,12" Padding="16" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.OpenProjectCommand}" CommandParameter="{Binding .}" />
+                                            </Border.GestureRecognizers>
                                             <Border.Triggers>
                                                 <DataTrigger TargetType="Border" Binding="{Binding IsTimerActive}" Value="True">
                                                     <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryContainer}" />

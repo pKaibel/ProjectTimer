@@ -58,6 +58,20 @@
                 </Grid>
             </Border>
 
+            <Border Padding="20" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Maximale Arbeitszeit pro Tag" FontSize="18" FontAttributes="Bold" />
+                        <Label Text="Dient als volle Breite der Tagesbalken in der Zeitenübersicht." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End" VerticalOptions="Center">
+                        <Label Text="{Binding MaximumDailyWorkDurationText}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Stepper Minimum="1" Maximum="24" Increment="1" Value="{Binding MaximumDailyWorkHours, Mode=TwoWay}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
             <VerticalStackLayout Spacing="12">
                 <Label Text="Farbschema" Style="{StaticResource SectionTitle}" />
                 <Label Text="Alle drei Schemas verwenden zugängliche Kontraste für Text und Aktionen." Style="{StaticResource MutedLabel}" />
@@ -96,6 +110,25 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="12">
+                <Label Text="Testdaten" Style="{StaticResource SectionTitle}" />
+                <Label Text="Erstellt fünf Beispielprojekte mit realistischen Zeiteinträgen. Bestehende Projekte und Einträge bleiben unverändert." Style="{StaticResource MutedLabel}" />
+                <Border Padding="18" BackgroundColor="{DynamicResource SurfaceContainer}" StrokeThickness="0">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="Zeitraum" FontAttributes="Bold" />
+                            <Label Text="Die Testdaten werden für jeden Werktag erzeugt." Style="{StaticResource MutedLabel}" FontSize="13" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End" VerticalOptions="Center">
+                            <Label Text="{Binding TestDataDurationText}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                            <Stepper Minimum="1" Maximum="12" Increment="1" Value="{Binding TestDataMonths, Mode=TwoWay}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Button Text="Testdaten laden" Command="{Binding LoadTestDataCommand}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="12">
                 <Label Text="Datensicherung" Style="{StaticResource SectionTitle}" />
                 <Label Text="Exportiere deine Projekte und Zeiteinträge regelmäßig als CSV-Datei. Ein Import ergänzt fehlende Daten und überspringt identische Einträge." Style="{StaticResource MutedLabel}" />
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
@@ -105,6 +138,12 @@
                 <Label Text="{Binding DataMessage}" TextColor="{DynamicResource Success}" IsVisible="{Binding HasDataMessage}" />
                 <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" />
                 <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="8" Margin="0,12,0,0">
+                <Label Text="Daten löschen" Style="{StaticResource SectionTitle}" />
+                <Label Text="Löscht alle Projekte, Zeiteinträge und laufenden Timer. Die App-Einstellungen bleiben erhalten." Style="{StaticResource MutedLabel}" />
+                <Button Text="Alle Daten löschen" Command="{Binding DeleteAllDataCommand}" Style="{StaticResource DangerButton}" HorizontalOptions="Start" />
             </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>

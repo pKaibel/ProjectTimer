@@ -260,6 +260,17 @@ public sealed class DatabaseService
         return deleted;
     }
 
+    public async Task ClearAllDataAsync()
+    {
+        await InitializeAsync();
+        await _database.RunInTransactionAsync(connection =>
+        {
+            connection.Execute("DELETE FROM ActiveTimeEntry");
+            connection.Execute("DELETE FROM TimeEntries");
+            connection.Execute("DELETE FROM Projects");
+        });
+    }
+
     public async Task<List<TimeEntry>> GetTimeEntriesAsync(int projectId)
     {
         await InitializeAsync();

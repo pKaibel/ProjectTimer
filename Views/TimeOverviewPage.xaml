@@ -30,18 +30,39 @@
                 </VerticalStackLayout>
             </Border>
 
-            <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Bars}">
+            <VerticalStackLayout Spacing="18" BindableLayout.ItemsSource="{Binding Bars}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="services:TimeChartBar">
-                        <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="12" HeightRequest="30">
-                            <Label Text="{Binding Label}" Style="{StaticResource MutedLabel}" VerticalTextAlignment="Center" />
-                            <Border Grid.Column="1" HeightRequest="14" BackgroundColor="{DynamicResource SurfaceContainerHigh}" StrokeThickness="0" VerticalOptions="Center">
-                                <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
-                                <Border WidthRequest="{Binding BarWidth}" HeightRequest="14" BackgroundColor="{DynamicResource Primary}" StrokeThickness="0" HorizontalOptions="Start" VerticalOptions="Center">
-                                    <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                        <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="12">
+                            <Label Text="{Binding Label}" Style="{StaticResource MutedLabel}" VerticalTextAlignment="Center" Margin="0,3,0,0" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="7">
+                                <Border HeightRequest="28" BackgroundColor="{DynamicResource SurfaceContainerHigh}" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <HorizontalStackLayout Spacing="2" BindableLayout.ItemsSource="{Binding Segments}" VerticalOptions="Center" HorizontalOptions="Start">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="services:TimeChartSegment">
+                                                <Border WidthRequest="{Binding Width}" HeightRequest="22" BackgroundColor="{Binding Color}" StrokeThickness="0">
+                                                    <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
+                                                </Border>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </HorizontalStackLayout>
                                 </Border>
-                            </Border>
-                            <Label Grid.Column="2" Text="{Binding DurationText}" FontAttributes="Bold" VerticalTextAlignment="Center" HorizontalTextAlignment="End" />
+                                <FlexLayout Direction="Row" Wrap="Wrap" BindableLayout.ItemsSource="{Binding Segments}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="services:TimeChartSegment">
+                                            <Border Margin="0,0,6,4" Padding="7,3" BackgroundColor="{DynamicResource SurfaceContainer}" Stroke="{DynamicResource OutlineVariant}" StrokeThickness="1">
+                                                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                                <HorizontalStackLayout Spacing="5">
+                                                    <BoxView Color="{Binding Color}" WidthRequest="9" HeightRequest="9" CornerRadius="4.5" VerticalOptions="Center" />
+                                                    <Label Text="{Binding DisplayText}" FontSize="12" />
+                                                </HorizontalStackLayout>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </FlexLayout>
+                            </VerticalStackLayout>
+                            <Label Grid.Column="2" Text="{Binding DurationText}" FontAttributes="Bold" VerticalTextAlignment="Center" HorizontalTextAlignment="End" Margin="0,3,0,0" />
                         </Grid>
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>

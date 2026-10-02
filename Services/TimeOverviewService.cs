@@ -15,11 +15,17 @@ public enum OverviewPeriod
 public sealed class TimeOverviewService
 {
     private const double MaximumBarWidth = 180;
+    private static readonly string[] ProjectColors =
+    [
+        "#2D6A4F", "#5E548E", "#A44A3F", "#2F6690", "#7A5C23", "#8C4A77"
+    ];
     private readonly DatabaseService _database;
+    private readonly OverviewSettingsService _overviewSettings;
 
-    public TimeOverviewService(DatabaseService database)
+    public TimeOverviewService(DatabaseService database, OverviewSettingsService overviewSettings)
     {
         _database = database;
+        _overviewSettings = overviewSettings;
     }
 
     public async Task<TimeOverview> GetOverviewAsync(OverviewPeriod period, bool includeWeekends = true)
@@ -27,6 +33,8 @@ public sealed class TimeOverviewService
         var today = DateTime.Today;
         var buckets = CreateBuckets(period, today, includeWeekends);
         var entries = await _database.GetAllTimeEntriesAsync();
+        var projects = await _database.GetProjectsAsync();
+        var projectNames = projects.ToDictionary(project => project.Id, project => project.Name);
         var runningTimer = await _database.GetActiveTimerAsync();
         if (runningTimer is not null)
         {
@@ -42,15 +50,34 @@ public sealed class TimeOverviewService
         {
             foreach (var bucket in buckets)
             {
-                bucket.Duration += GetOverlap(entry, bucket.StartLocal, bucket.EndLocal);
+                var overlap = GetOverlap(entry, bucket.StartLocal, bucket.EndLocal);
+                if (overlap <= TimeSpan.Zero)
+                {
+                    continue;
+                }
+
+                bucket.Duration += overlap;
+                bucket.Segments.Add(new BucketSegment(
+                    entry.ProjectId,
+                    projectNames.GetValueOrDefault(entry.ProjectId, "Gelöschtes Projekt"),
+                    overlap,
+                    entry.StartAtUtc));
             }
         }
 
-        var maximum = buckets.Max(bucket => bucket.Duration.Ticks);
+        var referenceTicks = GetReferenceTicks(period, buckets);
         var bars = buckets.Select(bucket => new TimeChartBar(
             bucket.Label,
             DurationFormatter.Format(bucket.Duration),
-            maximum == 0 ? 0 : Math.Max(6, MaximumBarWidth * bucket.Duration.Ticks / maximum))).ToList();
+            GetBarWidth(bucket.Duration, referenceTicks),
+            bucket.Segments
+                .OrderBy(segment => segment.StartAtUtc)
+                .Select(segment => new TimeChartSegment(
+                    segment.ProjectName,
+                    DurationFormatter.Format(segment.Duration),
+                    GetSegmentWidth(segment.Duration, bucket.Duration, referenceTicks),
+                    Color.FromArgb(ProjectColors[Math.Abs(segment.ProjectId) % ProjectColors.Length])))
+                .ToList())).ToList();
         var total = TimeSpan.FromTicks(buckets.Sum(bucket => bucket.Duration.Ticks));
         return new TimeOverview(GetTitle(period, today), GetSubtitle(period, today), DurationFormatter.FormatLong(total), bars);
     }
@@ -129,9 +156,38 @@ public sealed class TimeOverviewService
         public DateTime EndLocal { get; } = endLocal;
         public string Label { get; } = label;
         public TimeSpan Duration { get; set; }
+        public List<BucketSegment> Segments { get; } = [];
     }
+
+    private long GetReferenceTicks(OverviewPeriod period, IReadOnlyCollection<Bucket> buckets) =>
+        period is OverviewPeriod.Week or OverviewPeriod.Month
+            ? TimeSpan.FromHours(_overviewSettings.MaximumDailyWorkHours).Ticks
+            : buckets.Max(bucket => bucket.Duration.Ticks);
+
+    private static double GetSegmentWidth(TimeSpan duration, TimeSpan bucketDuration, long referenceTicks)
+    {
+        if (duration <= TimeSpan.Zero || referenceTicks == 0)
+        {
+            return 0;
+        }
+
+        var scaleTicks = Math.Max(referenceTicks, bucketDuration.Ticks);
+        return Math.Max(4, MaximumBarWidth * duration.Ticks / scaleTicks);
+    }
+
+    private static double GetBarWidth(TimeSpan duration, long referenceTicks) =>
+        duration <= TimeSpan.Zero || referenceTicks == 0
+            ? 0
+            : Math.Min(MaximumBarWidth, Math.Max(6, MaximumBarWidth * duration.Ticks / referenceTicks));
+
+    private sealed record BucketSegment(int ProjectId, string ProjectName, TimeSpan Duration, DateTime StartAtUtc);
 }
 
 public sealed record TimeOverview(string Title, string Subtitle, string TotalDurationText, IReadOnlyList<TimeChartBar> Bars);
 
-public sealed record TimeChartBar(string Label, string DurationText, double BarWidth);
+public sealed record TimeChartBar(string Label, string DurationText, double BarWidth, IReadOnlyList<TimeChartSegment> Segments);
+
+public sealed record TimeChartSegment(string ProjectName, string DurationText, double Width, Color Color)
+{
+    public string DisplayText => $"{ProjectName} · {DurationText}";
+}
