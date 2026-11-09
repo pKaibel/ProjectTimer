@@ -30,14 +30,19 @@
                     <Label Text="{Binding TimerStatusText}" TextColor="{DynamicResource Success}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <Label Text="{Binding ElapsedText}" FontSize="42" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <Label Text="{Binding StartedAtText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center" />
+                    <VerticalStackLayout IsVisible="{Binding IsPomodoro}" Spacing="5">
+                        <Label Text="{Binding PomodoroPhaseText}" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding PomodoroRemainingText}" HorizontalTextAlignment="Center" />
+                        <Button Text="{Binding PomodoroButtonText}" Command="{Binding AdvancePomodoroCommand}" />
+                    </VerticalStackLayout>
                     <VerticalStackLayout Spacing="5">
                         <Label Text="Kommentar" FontAttributes="Bold" />
                         <Editor Text="{Binding ActiveTimerNote}" Placeholder="Optional, z. B. Kundenbesprechung" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="70" />
                         <Button Text="Kommentar speichern" Command="{Binding SaveTimerNoteCommand}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" />
                     </VerticalStackLayout>
-                    <Button Text="Zeiterfassung pausieren" Command="{Binding PauseTimerCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
-                    <Button Text="Projekt wechseln" Command="{Binding SwitchProjectCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRunning}" />
-                    <Button Text="Zeiterfassung fortsetzen" Command="{Binding ResumeTimerCommand}" IsVisible="{Binding IsPaused}" />
+                    <Button Text="Zeiterfassung pausieren" Command="{Binding PauseTimerCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRegularRunning}" />
+                    <Button Text="Projekt wechseln" Command="{Binding SwitchProjectCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsRegularRunning}" />
+                    <Button Text="Zeiterfassung fortsetzen" Command="{Binding ResumeTimerCommand}" IsVisible="{Binding IsRegularPaused}" />
                     <Button Text="Zeiterfassung beenden" Command="{Binding StopTimerCommand}" Style="{StaticResource DangerButton}" Margin="0,8,0,0" />
                 </VerticalStackLayout>
             </Border>
@@ -54,6 +59,7 @@
                     <Editor Text="{Binding StartNote}" Placeholder="Optional, z. B. Kundenbesprechung" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="90" />
                 </Border>
                 <Button Text="Zeiterfassung starten" Command="{Binding StartTimerCommand}" />
+                <Button Text="Pomodoro starten" Command="{Binding StartPomodoroCommand}" Style="{StaticResource SecondaryButton}" BackgroundColor="{DynamicResource PrimaryContainer}" TextColor="{DynamicResource OnPrimaryContainer}" />
             </VerticalStackLayout>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                 <Button Text="Manuell hinzufügen" Command="{Binding AddManualCommand}" Style="{StaticResource SecondaryButton}" />

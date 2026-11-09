@@ -44,6 +44,8 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         _dialogs = dialogs;
         _backup = backup;
         StartTimerCommand = new AsyncCommand(StartTimerAsync, () => CanStartTimer);
+        StartPomodoroCommand = new AsyncCommand(StartPomodoroAsync, () => CanStartTimer);
+        AdvancePomodoroCommand = new AsyncCommand(AdvancePomodoroAsync, () => IsPomodoro);
         StopTimerCommand = new AsyncCommand(StopTimerAsync, () => IsTrackingHere);
         PauseTimerCommand = new AsyncCommand(PauseTimerAsync, () => IsTrackingHere && !IsPaused);
         ResumeTimerCommand = new AsyncCommand(ResumeTimerAsync, () => IsTrackingHere && IsPaused);
@@ -123,6 +125,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
                 OnPropertyChanged(nameof(IsRunning));
                 SwitchProjectCommand.RaiseCanExecuteChanged();
                 StartTimerCommand.RaiseCanExecuteChanged();
+                StartPomodoroCommand.RaiseCanExecuteChanged();
                 StopTimerCommand.RaiseCanExecuteChanged();
                 PauseTimerCommand.RaiseCanExecuteChanged();
                 ResumeTimerCommand.RaiseCanExecuteChanged();
@@ -140,6 +143,7 @@ public sealed class ProjectDetailViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(CanStartTimer));
                 StartTimerCommand.RaiseCanExecuteChanged();
+                StartPomodoroCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -167,6 +171,23 @@ public sealed class ProjectDetailViewModel : BaseViewModel
 
     public bool CanStartTimer => !IsTrackingHere && !IsTrackingAnotherProject;
     public bool IsRunning => IsTrackingHere && !IsPaused;
+    public bool IsPomodoro => _activeTimer?.PomodoroPhase is 1 or 2;
+    public bool IsRegularRunning => IsRunning && !IsPomodoro;
+    public bool IsRegularPaused => IsPaused && !IsPomodoro;
+    public string PomodoroButtonText => _activeTimer?.PomodoroPhase == 2 ? "Fokuszeit beginnen" : "Pause beginnen";
+    public string PomodoroPhaseText => _activeTimer?.PomodoroPhase == 2 ? "Pomodoro-Pause" : "Pomodoro-Fokuszeit";
+    public string PomodoroRemainingText
+    {
+        get
+        {
+            if (!IsPomodoro || _activeTimer is null)
+            {
+                return string.Empty;
+            }
+            var remaining = new DateTime(_activeTimer.PomodoroDeadlineUtcTicks, DateTimeKind.Utc) - DateTime.UtcNow;
+            return remaining <= TimeSpan.Zero ? "Zeit abgelaufen – bitte nächste Phase starten" : $"Verbleibend: {DurationFormatter.FormatTimer(remaining)}";
+        }
+    }
     public bool IsArchived
     {
         get => _isArchived;
@@ -180,6 +201,8 @@ public sealed class ProjectDetailViewModel : BaseViewModel
     }
     public string ArchiveButtonText => IsArchived ? "Wiederherstellen" : "Archivieren";
     public AsyncCommand StartTimerCommand { get; }
+    public AsyncCommand StartPomodoroCommand { get; }
+    public AsyncCommand AdvancePomodoroCommand { get; }
     public AsyncCommand StopTimerCommand { get; }
     public AsyncCommand PauseTimerCommand { get; }
     public AsyncCommand ResumeTimerCommand { get; }
@@ -236,6 +259,13 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         IsTrackingHere = _activeTimer is not null;
         IsTrackingAnotherProject = runningTimer is not null && runningTimer.ProjectId != _projectId;
         IsPaused = IsTrackingHere && _activeTimer?.IsPaused == true;
+        OnPropertyChanged(nameof(IsPomodoro));
+        OnPropertyChanged(nameof(IsRegularRunning));
+        OnPropertyChanged(nameof(IsRegularPaused));
+        OnPropertyChanged(nameof(PomodoroButtonText));
+        OnPropertyChanged(nameof(PomodoroPhaseText));
+        OnPropertyChanged(nameof(PomodoroRemainingText));
+        AdvancePomodoroCommand.RaiseCanExecuteChanged();
 
         if (IsTrackingHere && _activeTimer is not null)
         {
@@ -283,6 +313,26 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         await RunBusyAsync(async () =>
         {
             await _tracking.StopAsync(_projectId);
+            await LoadCoreAsync();
+        });
+    }
+
+    private async Task StartPomodoroAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            _activeTimer = await _tracking.StartPomodoroAsync(_projectId, StartNote);
+            StartNote = null;
+            await RefreshActiveTimerAsync();
+            StartDisplayTimer();
+        });
+    }
+
+    private async Task AdvancePomodoroAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            await _tracking.AdvancePomodoroAsync(_projectId);
             await LoadCoreAsync();
         });
     }
@@ -472,6 +522,10 @@ public sealed class ProjectDetailViewModel : BaseViewModel
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (IsPomodoro)
+                {
+                    OnPropertyChanged(nameof(PomodoroRemainingText));
+                }
                 if (IsTrackingHere && !IsPaused)
                 {
                     UpdateElapsed();

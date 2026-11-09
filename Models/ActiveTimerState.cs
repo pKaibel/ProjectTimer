@@ -17,6 +17,16 @@ public sealed class ActiveTimerState
 
     public bool IsPaused { get; set; }
 
+    public int PomodoroPhase { get; set; }
+
+    public long PomodoroDeadlineUtcTicks { get; set; }
+
+    public int PomodoroFocusMinutes { get; set; }
+
+    public int PomodoroBreakMinutes { get; set; }
+
+    public bool PomodoroCountBreaks { get; set; }
+
     [MaxLength(2000)]
     public string? Note { get; set; }
 

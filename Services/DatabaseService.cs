@@ -421,6 +421,7 @@ public sealed class DatabaseService
 
             current.AccumulatedTicks += Math.Max(0, elapsed.Ticks);
             current.IsPaused = true;
+            current.PomodoroPhase = 0;
             connection.Update(current);
         });
     }
@@ -451,10 +452,66 @@ public sealed class DatabaseService
 
             current.StartedAtUtc = resumedAtUtc;
             current.IsPaused = false;
+            current.PomodoroPhase = 0;
             connection.Update(current);
             resumedTimer = current;
         });
         return resumedTimer ?? throw new InvalidOperationException("Die Zeiterfassung konnte nicht fortgesetzt werden.");
+    }
+
+    public async Task<ActiveTimerState> AdvancePomodoroAsync(ActiveTimerState expectedState, DateTime nowUtc, TimeEntry? completedEntry)
+    {
+        await InitializeAsync();
+        if (completedEntry is not null)
+        {
+            _timeEntryFactory.Validate(completedEntry);
+        }
+
+        ActiveTimerState? updated = null;
+        await _database.RunInTransactionAsync(connection =>
+        {
+            var current = FindExpectedActiveTimer(connection, expectedState);
+            if (current.PomodoroPhase != expectedState.PomodoroPhase || current.PomodoroPhase is < 1 or > 2)
+            {
+                throw new InvalidOperationException("Die Pomodoro-Phase wurde zwischenzeitlich geändert.");
+            }
+
+            if (current.PomodoroPhase == 1)
+            {
+                if (current.IsPaused)
+                {
+                    throw new InvalidOperationException("Die Zeiterfassung ist pausiert.");
+                }
+                if (!current.PomodoroCountBreaks)
+                {
+                    if (completedEntry is not null)
+                    {
+                        connection.Insert(completedEntry);
+                    }
+                    current.AccumulatedTicks += Math.Max(0, (nowUtc - current.StartedAtUtc).Ticks);
+                    current.IsPaused = true;
+                }
+                current.PomodoroPhase = 2;
+                current.PomodoroDeadlineUtcTicks = nowUtc.AddMinutes(current.PomodoroBreakMinutes).Ticks;
+            }
+            else
+            {
+                if (current.IsPaused)
+                {
+                    if (connection.Table<ActiveTimerState>().Any(timer => !timer.IsPaused))
+                    {
+                        throw new InvalidOperationException("Für ein anderes Projekt läuft bereits eine Zeiterfassung.");
+                    }
+                    current.StartedAtUtc = nowUtc;
+                    current.IsPaused = false;
+                }
+                current.PomodoroPhase = 1;
+                current.PomodoroDeadlineUtcTicks = nowUtc.AddMinutes(current.PomodoroFocusMinutes).Ticks;
+            }
+            connection.Update(current);
+            updated = current;
+        });
+        return updated ?? throw new InvalidOperationException("Die Pomodoro-Phase konnte nicht gewechselt werden.");
     }
 
     public async Task<ActiveTimerState> UpdateTimerNoteAsync(ActiveTimerState expectedState, string? note)

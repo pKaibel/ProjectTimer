@@ -24,6 +24,7 @@ public partial class App : MauiWinUIApplication
     private TraySettingsService? _traySettings;
     private ThemeService? _themeService;
     private TimeTrackingService? _tracking;
+    private PomodoroNotificationService? _pomodoroNotifications;
     private IntPtr _mainWindowHandle;
     private int _restoreRequested;
 
@@ -83,6 +84,11 @@ public partial class App : MauiWinUIApplication
             ApplyTitleBarColors();
         }
         _trayIcon ??= new NativeTrayIcon(_mainWindowHandle, RestoreMainWindow);
+        _pomodoroNotifications = _mauiApp?.Services.GetRequiredService<PomodoroNotificationService>();
+        if (_pomodoroNotifications is not null)
+        {
+            _pomodoroNotifications.ReminderDue += OnPomodoroReminderDue;
+        }
         _tracking = _mauiApp?.Services.GetRequiredService<TimeTrackingService>();
         if (_tracking is not null)
         {
@@ -102,6 +108,11 @@ public partial class App : MauiWinUIApplication
     private void OnMainWindowClosed(object sender, Microsoft.UI.Xaml.WindowEventArgs args)
     {
         StopRunningTimerSafely();
+        if (_pomodoroNotifications is not null)
+        {
+            _pomodoroNotifications.ReminderDue -= OnPomodoroReminderDue;
+            _pomodoroNotifications.Cancel();
+        }
         if (sender is WinUiWindow window)
         {
             window.Activated -= OnMainWindowActivated;
@@ -149,6 +160,19 @@ public partial class App : MauiWinUIApplication
         });
     }
 
+    private void OnPomodoroReminderDue(ActiveTimerStateInfo phase, CancellationToken cancellationToken)
+    {
+        _mainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _trayIcon?.ShowReminder(phase.IsBreak
+                    ? "Die Pause ist vorbei. Starte die nächste Fokuszeit."
+                    : "Die Fokuszeit ist vorbei. Starte deine Pause.");
+            }
+        });
+    }
+
     private void OnAppInstanceActivated(object? sender, AppActivationArguments args)
     {
         var dispatcher = _mainWindow?.DispatcherQueue;
@@ -168,6 +192,7 @@ public partial class App : MauiWinUIApplication
             if (_tracking is not null)
             {
                 OnTrackingStatusChanged(await _tracking.GetStatusAsync());
+                await _tracking.RestorePomodoroReminderAsync();
             }
         }
         catch

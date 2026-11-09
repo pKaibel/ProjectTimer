@@ -14,9 +14,11 @@ internal sealed class NativeTrayIcon : IDisposable
     private const uint NIF_MESSAGE = 0x00000001;
     private const uint NIF_ICON = 0x00000002;
     private const uint NIF_TIP = 0x00000004;
+    private const uint NIF_INFO = 0x00000010;
     private const uint WM_APP = 0x8000;
     private const uint TrayCallbackMessage = WM_APP + 0x3C;
     private const uint WM_LBUTTONDBLCLK = 0x0203;
+    private const uint NIN_BALLOONUSERCLICK = 0x0405;
     private const int WM_SETICON = 0x0080;
     private const int ICON_SMALL = 0;
     private const int ICON_BIG = 1;
@@ -104,9 +106,29 @@ internal sealed class NativeTrayIcon : IDisposable
         ApplyTaskbarIcon(_statusIcon);
     }
 
+    public void ShowReminder(string message)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        var data = new NotifyIconData
+        {
+            cbSize = (uint)Marshal.SizeOf<NotifyIconData>(),
+            hWnd = _windowHandle,
+            uID = 1,
+            uFlags = NIF_INFO,
+            szInfoTitle = "Pomodoro",
+            szInfo = message,
+            dwInfoFlags = 1
+        };
+        ShellNotifyIcon(NIM_MODIFY, ref data);
+    }
+
     private IntPtr WindowSubclassProc(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData)
     {
-        if (message == TrayCallbackMessage && (uint)lParam.ToInt64() == WM_LBUTTONDBLCLK)
+        if (message == TrayCallbackMessage && (uint)lParam.ToInt64() is WM_LBUTTONDBLCLK or NIN_BALLOONUSERCLICK)
         {
             _restoreWindow();
             return IntPtr.Zero;

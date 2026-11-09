@@ -1,9 +1,24 @@
 using Foundation;
+using UserNotifications;
 
 namespace ProjectTimer;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate
 {
-    protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+    private readonly NotificationDelegate _notificationDelegate = new();
+
+    protected override MauiApp CreateMauiApp()
+    {
+        UNUserNotificationCenter.Current.Delegate = _notificationDelegate;
+        return MauiProgram.CreateMauiApp();
+    }
+
+    private sealed class NotificationDelegate : UNUserNotificationCenterDelegate
+    {
+        public override void WillPresentNotification(UNUserNotificationCenter center, UNNotification notification, Action<UNNotificationPresentationOptions> completionHandler)
+        {
+            completionHandler(UNNotificationPresentationOptions.Banner | UNNotificationPresentationOptions.Sound);
+        }
+    }
 }

@@ -68,6 +68,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<OnboardingService>();
         builder.Services.AddSingleton<TraySettingsService>();
         builder.Services.AddSingleton<OverviewSettingsService>();
+        builder.Services.AddSingleton<PomodoroSettingsService>();
+        builder.Services.AddSingleton<PomodoroNotificationService>();
         builder.Services.AddSingleton<CsvBackupService>();
         builder.Services.AddSingleton<TestDataService>();
         builder.Services.AddSingleton<TimeOverviewService>();

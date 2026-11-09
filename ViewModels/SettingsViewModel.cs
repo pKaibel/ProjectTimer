@@ -8,6 +8,8 @@ public sealed class SettingsViewModel : BaseViewModel
     private readonly ThemeService _themeService;
     private readonly TraySettingsService _traySettings;
     private readonly OverviewSettingsService _overviewSettings;
+    private readonly PomodoroSettingsService _pomodoroSettings;
+    private readonly PomodoroNotificationService _pomodoroNotifications;
     private readonly CsvBackupService _backup;
     private readonly TestDataService _testData;
     private readonly DatabaseService _database;
@@ -18,12 +20,17 @@ public sealed class SettingsViewModel : BaseViewModel
     private bool _showWeekendsOnStartPage;
     private int _maximumDailyWorkHours;
     private int _testDataMonths = 3;
+    private int _focusMinutes;
+    private int _breakMinutes;
+    private bool _countBreaks;
 
-    public SettingsViewModel(ThemeService themeService, TraySettingsService traySettings, OverviewSettingsService overviewSettings, CsvBackupService backup, TestDataService testData, DatabaseService database, IUserDialogService dialogs)
+    public SettingsViewModel(ThemeService themeService, TraySettingsService traySettings, OverviewSettingsService overviewSettings, PomodoroSettingsService pomodoroSettings, PomodoroNotificationService pomodoroNotifications, CsvBackupService backup, TestDataService testData, DatabaseService database, IUserDialogService dialogs)
     {
         _themeService = themeService;
         _traySettings = traySettings;
         _overviewSettings = overviewSettings;
+        _pomodoroSettings = pomodoroSettings;
+        _pomodoroNotifications = pomodoroNotifications;
         _backup = backup;
         _testData = testData;
         _database = database;
@@ -33,6 +40,9 @@ public sealed class SettingsViewModel : BaseViewModel
         ShowTaskbarLabel = traySettings.ShowTaskbarLabel;
         ShowWeekendsOnStartPage = overviewSettings.ShowWeekendsOnStartPage;
         MaximumDailyWorkHours = overviewSettings.MaximumDailyWorkHours;
+        FocusMinutes = pomodoroSettings.FocusMinutes;
+        BreakMinutes = pomodoroSettings.BreakMinutes;
+        CountBreaks = pomodoroSettings.CountBreaks;
         Schemes = new ObservableCollection<ThemeSchemeItem>(Enum.GetValues<ColorScheme>()
             .Select(scheme => new ThemeSchemeItem(themeService.CreateOption(scheme), scheme == themeService.SelectedScheme)));
         SelectSchemeCommand = new AsyncCommand<ThemeSchemeItem>(SelectSchemeAsync);
@@ -128,6 +138,48 @@ public sealed class SettingsViewModel : BaseViewModel
 
     public string MaximumDailyWorkDurationText => $"{MaximumDailyWorkHours} Stunden";
 
+    public int FocusMinutes
+    {
+        get => _focusMinutes;
+        set
+        {
+            if (SetProperty(ref _focusMinutes, Math.Clamp(value, 1, 180)))
+            {
+                _pomodoroSettings.FocusMinutes = _focusMinutes;
+                OnPropertyChanged(nameof(FocusDurationText));
+            }
+        }
+    }
+
+    public string FocusDurationText => $"{FocusMinutes} Minuten";
+
+    public int BreakMinutes
+    {
+        get => _breakMinutes;
+        set
+        {
+            if (SetProperty(ref _breakMinutes, Math.Clamp(value, 1, 60)))
+            {
+                _pomodoroSettings.BreakMinutes = _breakMinutes;
+                OnPropertyChanged(nameof(BreakDurationText));
+            }
+        }
+    }
+
+    public string BreakDurationText => $"{BreakMinutes} Minuten";
+
+    public bool CountBreaks
+    {
+        get => _countBreaks;
+        set
+        {
+            if (SetProperty(ref _countBreaks, value))
+            {
+                _pomodoroSettings.CountBreaks = value;
+            }
+        }
+    }
+
     public int TestDataMonths
     {
         get => _testDataMonths;
@@ -208,6 +260,7 @@ public sealed class SettingsViewModel : BaseViewModel
         {
             DataMessage = null;
             await _database.ClearAllDataAsync();
+            _pomodoroNotifications.Cancel();
             DataMessage = "Alle erfassten Daten wurden gelöscht.";
         });
     }
