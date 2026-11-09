@@ -13,6 +13,8 @@ public sealed class ProjectListViewModel : BaseViewModel
     private readonly INavigationService _navigation;
     private CancellationTokenSource? _displayTimerCancellation;
     private bool _showArchivedProjects;
+    private string? _searchText;
+    private List<ProjectListItemViewModel> _allProjects = [];
 
     public ProjectListViewModel(DatabaseService database, TimeOverviewService overview, OverviewSettingsService overviewSettings, TimeTrackingService timeTracking, INavigationService navigation)
     {
@@ -40,6 +42,17 @@ public sealed class ProjectListViewModel : BaseViewModel
     }
     public bool IsEmpty => Projects.Count == 0 && !IsBusy;
     public bool HasQuickAccessProjects => QuickAccessProjects.Count > 0;
+    public string? SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                FilterProjects();
+            }
+        }
+    }
     public bool ShowArchivedProjects
     {
         get => _showArchivedProjects;
@@ -54,10 +67,14 @@ public sealed class ProjectListViewModel : BaseViewModel
         }
     }
     public string ProjectListTitle => ShowArchivedProjects ? "Archivierte Projekte" : "Meine Projekte";
-    public string EmptyProjectsTitle => ShowArchivedProjects ? "Keine archivierten Projekte" : "Noch keine Projekte";
-    public string EmptyProjectsText => ShowArchivedProjects
-        ? "Archivierte Projekte erscheinen hier, bis du sie wiederherstellst."
-        : "Erstelle dein erstes Projekt und beginne mit der Zeiterfassung.";
+    public string EmptyProjectsTitle => !string.IsNullOrWhiteSpace(SearchText)
+        ? "Keine Projekte gefunden"
+        : ShowArchivedProjects ? "Keine archivierten Projekte" : "Noch keine Projekte";
+    public string EmptyProjectsText => !string.IsNullOrWhiteSpace(SearchText)
+        ? "Versuche einen anderen Suchbegriff."
+        : ShowArchivedProjects
+            ? "Archivierte Projekte erscheinen hier, bis du sie wiederherstellst."
+            : "Erstelle dein erstes Projekt und beginne mit der Zeiterfassung.";
     public AsyncCommand AddProjectCommand { get; }
     public AsyncCommand OpenSettingsCommand { get; }
     public AsyncCommand OpenInfoCommand { get; }
@@ -132,7 +149,6 @@ public sealed class ProjectListViewModel : BaseViewModel
         var projects = await _database.GetProjectsWithTotalsAsync(ShowArchivedProjects);
         var timerStates = await _database.GetTimerStatesAsync();
         var overview = await _overview.GetOverviewAsync(OverviewPeriod.Week, _overviewSettings.ShowWeekendsOnStartPage);
-        Projects.Clear();
         QuickAccessProjects.Clear();
         WeeklyBars.Clear();
         foreach (var bar in overview.Bars)
@@ -140,19 +156,30 @@ public sealed class ProjectListViewModel : BaseViewModel
             WeeklyBars.Add(bar);
         }
         WeeklyTotalText = overview.TotalDurationText;
-        var items = projects
+        _allProjects = projects
             .Select(project => new ProjectListItemViewModel(project, timerStates.FirstOrDefault(timer => timer.ProjectId == project.Id)))
             .ToList();
-        foreach (var item in items)
-        {
-            Projects.Add(item);
-        }
-        foreach (var item in items.Where(item => item.IsQuickAccess && !item.IsArchived).OrderBy(item => item.QuickAccessOrder).ThenBy(item => item.Id))
+        FilterProjects();
+        foreach (var item in _allProjects.Where(item => item.IsQuickAccess && !item.IsArchived).OrderBy(item => item.QuickAccessOrder).ThenBy(item => item.Id))
         {
             QuickAccessProjects.Add(item);
         }
 
         OnPropertyChanged(nameof(HasQuickAccessProjects));
+    }
+
+    private void FilterProjects()
+    {
+        var searchText = SearchText?.Trim() ?? string.Empty;
+        Projects.Clear();
+        foreach (var project in _allProjects.Where(project => project.Name.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)))
+        {
+            Projects.Add(project);
+        }
+
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EmptyProjectsTitle));
+        OnPropertyChanged(nameof(EmptyProjectsText));
     }
 
     private Task AddProjectAsync() => _navigation.GoToAsync(Routes.ProjectEditor);

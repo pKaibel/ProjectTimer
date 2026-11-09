@@ -103,6 +103,7 @@
                         <Label Text="Arbeitszeit lokal und zuverlässig erfassen" Style="{StaticResource MutedLabel}" />
                         <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorLabel}" IsVisible="{Binding HasError}" Margin="0,8,0,0" />
                     </VerticalStackLayout>
+                    <SearchBar Text="{Binding SearchText}" Placeholder="Projekte suchen" />
                     <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Projects}">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="vm:ProjectListItemViewModel">

@@ -184,8 +184,19 @@ public sealed class DatabaseService
 
         if (project.Id == 0)
         {
-            project.CreatedAt = DateTime.UtcNow;
-            return await _database.InsertAsync(project);
+            var rowsInserted = 0;
+            await _database.RunInTransactionAsync(connection =>
+            {
+                var names = connection.QueryScalars<string>("SELECT Name FROM Projects");
+                if (names.Any(name => string.Equals(name?.Trim(), project.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new ArgumentException("Ein Projekt mit diesem Namen ist bereits vorhanden.");
+                }
+
+                project.CreatedAt = DateTime.UtcNow;
+                rowsInserted = connection.Insert(project);
+            });
+            return rowsInserted;
         }
 
         var existing = await _database.FindAsync<Project>(project.Id);
